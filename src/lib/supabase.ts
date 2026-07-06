@@ -11,10 +11,23 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+const isServer = typeof window === "undefined";
+
+// AsyncStorage's web implementation reads `window.localStorage` directly,
+// which doesn't exist during Expo Router's static-export SSR pass.
+const ssrSafeStorage = {
+  getItem: (key: string) =>
+    isServer ? Promise.resolve(null) : AsyncStorage.getItem(key),
+  setItem: (key: string, value: string) =>
+    isServer ? Promise.resolve() : AsyncStorage.setItem(key, value),
+  removeItem: (key: string) =>
+    isServer ? Promise.resolve() : AsyncStorage.removeItem(key),
+};
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: AsyncStorage,
-    autoRefreshToken: true,
+    storage: ssrSafeStorage,
+    autoRefreshToken: !isServer,
     persistSession: true,
     detectSessionInUrl: false,
   },
