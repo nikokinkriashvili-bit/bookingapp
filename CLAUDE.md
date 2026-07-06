@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Git is initialized and the Expo project is scaffolded (SDK 57, Expo Router, TypeScript, `src/app` directory structure). No Supabase project is wired up yet — that's the next step, pending the user's Supabase Project URL and anon key. No features are built yet; this is a blank app verified to run in Expo Go.
+Git is initialized, pushed to [github.com/nikokinkriashvili-bit/bookingapp](https://github.com/nikokinkriashvili-bit/bookingapp), and the Expo project is scaffolded (downgraded to SDK 54 to match the Expo Go App Store release, Expo Router, TypeScript, `src/app` directory structure). A Supabase project is connected: client lives at `src/lib/supabase.ts`, credentials in `.env` (gitignored, see `.env.example` for the required keys). No Supabase tables/auth screens exist yet — that's the next roadmap step. No features are built yet; this is a blank app.
 
 Commands:
 - `npm start` — start the Expo dev server (scan the QR code with Expo Go to preview on a phone)
