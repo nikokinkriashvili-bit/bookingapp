@@ -32,3 +32,27 @@ export const STATUS_COLORS: Record<JobStatus, string> = {
   paid: "#16A085",
   cancelled: "#95A5A6",
 };
+
+const PENDING_STATUSES: JobStatus[] = ["booked", "in_progress", "awaiting_collection"];
+
+export type JobPeriodSummary = {
+  total: number;
+  completed: number;
+  pending: number;
+  paid: number;
+};
+
+function sumPrice(jobs: { price_total: number | null }[]): number {
+  return jobs.reduce((sum, j) => sum + (j.price_total ?? 0), 0);
+}
+
+export function summarizeJobs(
+  jobs: { status: JobStatus; price_total: number | null }[]
+): JobPeriodSummary {
+  return {
+    total: sumPrice(jobs),
+    completed: sumPrice(jobs.filter((j) => j.status === "complete")),
+    pending: sumPrice(jobs.filter((j) => PENDING_STATUSES.includes(j.status))),
+    paid: sumPrice(jobs.filter((j) => j.status === "paid")),
+  };
+}

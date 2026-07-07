@@ -1,7 +1,8 @@
 import { Link, Redirect } from "expo-router";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "@/providers/AuthProvider";
 import { useBusiness } from "@/providers/BusinessProvider";
+import { DashboardStats } from "@/components/DashboardStats";
 
 export default function Index() {
   const { session, isLoading: isAuthLoading, signOut } = useAuth();
@@ -24,7 +25,7 @@ export default function Index() {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.text}>{business.name}</Text>
       <Text style={styles.text}>Signed in as {session.user.email}</Text>
       <Text style={styles.link} onPress={signOut}>
@@ -32,13 +33,15 @@ export default function Index() {
       </Text>
 
       <Link href="/jobs/new" style={styles.newJobButton}>
-        + New job
+        + Add new order
       </Link>
 
-      <Link href="/whiteboard" style={styles.whiteboardButton}>
-        Whiteboard
+      <Link href="/calendar" style={styles.calendarButton}>
+        Calendar
       </Link>
-    </View>
+
+      <DashboardStats />
+    </ScrollView>
   );
 }
 
@@ -49,7 +52,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   container: {
-    flex: 1,
     padding: 24,
     gap: 8,
   },
@@ -71,7 +73,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     overflow: "hidden",
   },
-  whiteboardButton: {
+  calendarButton: {
     backgroundColor: "#fff",
     color: "#208AEF",
     borderWidth: 1,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
   Pressable,
@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
+import { addMinutesToDateTime, parseDateAndTime } from "@/lib/calendarDate";
 
 type Vehicle = {
   id: string;
@@ -38,6 +39,7 @@ type Service = {
 
 export default function NewJob() {
   const { business } = useBusiness();
+  const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
 
   const [plate, setPlate] = useState("");
   const [lookingUp, setLookingUp] = useState(false);
@@ -60,8 +62,11 @@ export default function NewJob() {
   const [services, setServices] = useState<Service[]>([]);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
 
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
+  const [fromDate, setFromDate] = useState(dateParam ?? "");
+  const [fromTime, setFromTime] = useState("");
+  const [toDate, setToDate] = useState(dateParam ?? "");
+  const [toTime, setToTime] = useState("");
+  const [toManuallyEdited, setToManuallyEdited] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -128,6 +133,26 @@ export default function NewJob() {
   const totalMinutes = selectedServices.reduce((sum, s) => sum + s.duration_minutes, 0);
   const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price_gel ?? 0), 0);
 
+  useEffect(() => {
+    if (toManuallyEdited || !fromDate || !fromTime) return;
+    const suggested = addMinutesToDateTime(fromDate, fromTime, Math.max(totalMinutes, 60));
+    if (suggested) {
+      setToDate(suggested.date);
+      setToTime(suggested.time);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromDate, fromTime, totalMinutes, toManuallyEdited]);
+
+  const onToDateChange = (v: string) => {
+    setToManuallyEdited(true);
+    setToDate(v);
+  };
+
+  const onToTimeChange = (v: string) => {
+    setToManuallyEdited(true);
+    setToTime(v);
+  };
+
   const onSubmit = async () => {
     if (!business) return;
     setError(null);
@@ -141,13 +166,18 @@ export default function NewJob() {
       setError("Select at least one service.");
       return;
     }
-    if (!date || !time) {
-      setError("Enter a date and time.");
+    if (!fromDate || !fromTime || !toDate || !toTime) {
+      setError("Enter a from and to date/time.");
       return;
     }
-    const scheduledSlot = new Date(`${date}T${time}:00`);
-    if (isNaN(scheduledSlot.getTime())) {
+    const scheduledSlot = parseDateAndTime(fromDate, fromTime);
+    const scheduledEnd = parseDateAndTime(toDate, toTime);
+    if (isNaN(scheduledSlot.getTime()) || isNaN(scheduledEnd.getTime())) {
       setError("Date/time format is invalid. Use YYYY-MM-DD and HH:MM.");
+      return;
+    }
+    if (scheduledEnd <= scheduledSlot) {
+      setError("The end time must be after the start time.");
       return;
     }
     if (selectedCustomerId === "new" && (!customerName.trim() || !customerPhone.trim())) {
@@ -226,6 +256,7 @@ export default function NewJob() {
       service_ids: selectedServiceIds,
       status: "booked",
       scheduled_slot: scheduledSlot.toISOString(),
+      scheduled_end: scheduledEnd.toISOString(),
       price_total: totalPrice,
     });
 
@@ -241,7 +272,7 @@ export default function NewJob() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>New job</Text>
+      <Text style={styles.title}>New order</Text>
 
       <TextInput
         style={styles.plateInput}
@@ -370,18 +401,32 @@ export default function NewJob() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Time slot</Text>
+        <Text style={styles.sectionLabel}>Schedule</Text>
+        <Text style={styles.subLabel}>From</Text>
         <TextInput
           style={styles.input}
           placeholder="YYYY-MM-DD"
-          value={date}
-          onChangeText={setDate}
+          value={fromDate}
+          onChangeText={setFromDate}
         />
         <TextInput
           style={styles.input}
           placeholder="HH:MM"
-          value={time}
-          onChangeText={setTime}
+          value={fromTime}
+          onChangeText={setFromTime}
+        />
+        <Text style={styles.subLabel}>To</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="YYYY-MM-DD"
+          value={toDate}
+          onChangeText={onToDateChange}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="HH:MM"
+          value={toTime}
+          onChangeText={onToTimeChange}
         />
       </View>
 
@@ -391,7 +436,7 @@ export default function NewJob() {
         {submitting ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Create job</Text>
+          <Text style={styles.buttonText}>Create order</Text>
         )}
       </Pressable>
     </ScrollView>
@@ -427,6 +472,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#555",
+  },
+  subLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#999",
+    marginTop: 6,
   },
   input: {
     borderWidth: 1,
