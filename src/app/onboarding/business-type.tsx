@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { router } from "expo-router";
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -8,11 +9,13 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { BUSINESS_TYPES, type BusinessType } from "@/lib/businessTypes";
-import { getBusinessTypeConfig } from "@/lib/businessTypes";
+import type { BusinessType } from "@/lib/businessTypes";
+import { useCatalog } from "@/providers/CatalogProvider";
 import { useOnboarding } from "@/providers/OnboardingProvider";
 
 export default function BusinessTypeStep() {
+  const { businessTypes, isLoading: isCatalogLoading, error: catalogError } =
+    useCatalog();
   const {
     businessName,
     setBusinessName,
@@ -36,7 +39,11 @@ export default function BusinessTypeStep() {
       setError("Choose a business type.");
       return;
     }
-    const config = getBusinessTypeConfig(businessType);
+    const config = businessTypes.find((t) => t.value === businessType);
+    if (!config) {
+      setError("Unknown business type.");
+      return;
+    }
     setWorkingHours(config.defaultHours);
     setServices(
       config.defaultServices.map((s) => ({ ...s, priceGel: "" }))
@@ -44,6 +51,14 @@ export default function BusinessTypeStep() {
     setError(null);
     router.push("/onboarding/hours");
   };
+
+  if (isCatalogLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -57,7 +72,8 @@ export default function BusinessTypeStep() {
       />
 
       <Text style={styles.label}>Business type</Text>
-      {BUSINESS_TYPES.map((type) => (
+      {catalogError ? <Text style={styles.error}>{catalogError}</Text> : null}
+      {businessTypes.map((type) => (
         <Pressable
           key={type.value}
           style={[
@@ -87,6 +103,11 @@ export default function BusinessTypeStep() {
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   container: {
     padding: 24,
     gap: 12,
