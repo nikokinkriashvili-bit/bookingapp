@@ -46,3 +46,6 @@ example
 # local Claude Code settings (machine-specific permissions)
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
+
+# third-party Claude skill payloads (reinstall via `npx impeccable install`)
+.claude/skills/

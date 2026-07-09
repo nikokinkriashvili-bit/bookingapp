@@ -68,6 +68,9 @@ export default function NewJob() {
   const [toTime, setToTime] = useState("");
   const [toManuallyEdited, setToManuallyEdited] = useState(false);
 
+  const [price, setPrice] = useState("");
+  const [priceManuallyEdited, setPriceManuallyEdited] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -151,6 +154,16 @@ export default function NewJob() {
   const onToTimeChange = (v: string) => {
     setToManuallyEdited(true);
     setToTime(v);
+  };
+
+  useEffect(() => {
+    if (priceManuallyEdited) return;
+    setPrice(totalPrice ? String(totalPrice) : "");
+  }, [totalPrice, priceManuallyEdited]);
+
+  const onPriceChange = (v: string) => {
+    setPriceManuallyEdited(true);
+    setPrice(v);
   };
 
   const onSubmit = async () => {
@@ -257,7 +270,7 @@ export default function NewJob() {
       status: "booked",
       scheduled_slot: scheduledSlot.toISOString(),
       scheduled_end: scheduledEnd.toISOString(),
-      price_total: totalPrice,
+      price_total: price.trim() ? Number(price) : 0,
     });
 
     setSubmitting(false);
@@ -394,10 +407,19 @@ export default function NewJob() {
           </Pressable>
         ))}
         {selectedServiceIds.length > 0 ? (
-          <Text style={styles.totalText}>
-            Total: {totalMinutes}min · {totalPrice} GEL
-          </Text>
+          <Text style={styles.totalText}>Duration: {totalMinutes}min</Text>
         ) : null}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Price (GEL)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="0"
+          keyboardType="numeric"
+          value={price}
+          onChangeText={onPriceChange}
+        />
       </View>
 
       <View style={styles.section}>

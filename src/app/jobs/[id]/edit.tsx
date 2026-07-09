@@ -27,6 +27,7 @@ type JobDetail = {
   service_ids: string[];
   scheduled_slot: string;
   scheduled_end: string;
+  price_total: number | null;
   vehicles: { plate_number: string; make: string | null; model: string | null } | null;
   customers: { name: string; phone: string } | null;
 };
@@ -43,6 +44,7 @@ export default function EditJob() {
   const [fromTime, setFromTime] = useState("");
   const [toDate, setToDate] = useState("");
   const [toTime, setToTime] = useState("");
+  const [price, setPrice] = useState("");
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +64,7 @@ export default function EditJob() {
     supabase
       .from("jobs")
       .select(
-        "id, status, service_ids, scheduled_slot, scheduled_end, vehicles(plate_number, make, model), customers(name, phone)"
+        "id, status, service_ids, scheduled_slot, scheduled_end, price_total, vehicles(plate_number, make, model), customers(name, phone)"
       )
       .eq("id", id)
       .single()
@@ -81,6 +83,7 @@ export default function EditJob() {
         setFromTime(toTimeString(start));
         setToDate(toDateKey(end));
         setToTime(toTimeString(end));
+        setPrice(j.price_total ? String(j.price_total) : "");
         setLoading(false);
       });
   }, [id]);
@@ -95,7 +98,6 @@ export default function EditJob() {
 
   const selectedServices = services.filter((s) => selectedServiceIds.includes(s.id));
   const totalMinutes = selectedServices.reduce((sum, s) => sum + s.duration_minutes, 0);
-  const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price_gel ?? 0), 0);
 
   const onSave = async () => {
     if (!job) return;
@@ -128,7 +130,7 @@ export default function EditJob() {
         status,
         scheduled_slot: scheduledSlot.toISOString(),
         scheduled_end: scheduledEnd.toISOString(),
-        price_total: totalPrice,
+        price_total: price.trim() ? Number(price) : 0,
       })
       .eq("id", job.id);
     setSubmitting(false);
@@ -210,10 +212,19 @@ export default function EditJob() {
           </Pressable>
         ))}
         {selectedServiceIds.length > 0 ? (
-          <Text style={styles.totalText}>
-            Total: {totalMinutes}min · {totalPrice} GEL
-          </Text>
+          <Text style={styles.totalText}>Duration: {totalMinutes}min</Text>
         ) : null}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Price (GEL)</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="0"
+          keyboardType="numeric"
+          value={price}
+          onChangeText={setPrice}
+        />
       </View>
 
       <View style={styles.section}>

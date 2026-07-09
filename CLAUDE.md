@@ -2,9 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project status
+## Project status (updated July 2026)
 
-Git is initialized, pushed to [github.com/nikokinkriashvili-bit/bookingapp](https://github.com/nikokinkriashvili-bit/bookingapp), and the Expo project is scaffolded (downgraded to SDK 54 to match the Expo Go App Store release, Expo Router, TypeScript, `src/app` directory structure). A Supabase project is connected: client lives at `src/lib/supabase.ts`, credentials in `.env` (gitignored, see `.env.example` for the required keys). No Supabase tables/auth screens exist yet — that's the next roadmap step. No features are built yet; this is a blank app.
+Git is initialized and pushed to [github.com/nikokinkriashvili-bit/bookingapp](https://github.com/nikokinkriashvili-bit/bookingapp). The Expo project is scaffolded (SDK 54 to match the Expo Go App Store release, Expo Router, TypeScript, `src/app` directory structure). Supabase is connected (`src/lib/supabase.ts`, credentials in `.env`, gitignored — see `.env.example`) and the web build deploys to Vercel at bookingapp-beta-two.vercel.app.
+
+**Built and working** (roadmap steps 1–5, with step 5 replaced — see Confirmed product decisions):
+- Email/password auth for business owners (`login.tsx`, `sign-up.tsx`, `AuthProvider`)
+- 3-step onboarding: business type → working hours → services. The 8 business types and default service templates live in Supabase catalog tables (`business_type_catalog`, `default_service_templates`), seeded from the BRD, not hardcoded.
+- Data model: migrations `supabase/001`–`005` (all run in the Supabase SQL Editor) create `businesses`, `services`, catalog tables, `vehicles`, `customers`, `customer_vehicles`, `jobs` (with `scheduled_slot` + `scheduled_end`), all with per-business RLS. **Not yet created:** `staff`, `payments`, `messages_log` — they arrive with their features.
+- Job intake: plate entry, vehicle/customer creation, service multi-select, from/to scheduling, editable price (auto-suggested from selected services until manually edited)
+- Month/day calendar with status+service filters and GEL period summaries (replaces the kanban whiteboard)
+- Order edit screen (`jobs/[id]/edit.tsx`), home dashboard stat balloons (`DashboardStats.tsx`)
+
+**Not built yet:** Vehicle & Customer CRM screens (TRD §5.4), bilingual UI (Georgian/English), WhatsApp integration, BOG payments. Migrations must be run manually in the Supabase SQL Editor — Claude has no DB access.
+
+**Testing surfaces:** localhost web preview + Vercel. Phone testing via Expo Go has been blocked by firewall/tunnel issues on this machine — design mobile-first and verify at ~375px width in the web preview.
 
 Commands:
 - `npm start` — start the Expo dev server (scan the QR code with Expo Go to preview on a phone)
@@ -12,6 +24,14 @@ Commands:
 - `npm run lint` — run `expo lint`
 
 See [AGENTS.md](AGENTS.md) for the Expo SDK version note (docs.expo.dev/versions/v57.0.0/ — check versioned docs, not general docs, since APIs have changed since SDK 57).
+
+## Design Context
+
+[PRODUCT.md](PRODUCT.md) captures the strategic design context (users, product purpose, brand personality, anti-references, design principles, accessibility baseline). Read it before making UI/UX decisions.
+
+When building or reworking UI, apply the `frontend-design` skill's principles (if not registered in the session, its SKILL.md is readable at `~/.claude/plugins/marketplaces/claude-plugins-official/plugins/frontend-design/skills/frontend-design/SKILL.md`): deliberate palette/type choices grounded in the subject, one signature element, restraint elsewhere, copy written from the user's side of the screen. Goal (confirmed with Niko): one consistent, considered visual language across the whole app — new screens follow it and already-built screens (onboarding, intake, calendar, dashboard) get brought in line, not a patchwork redesigned later.
+
+The `impeccable` design skill payload lives at `.claude/skills/impeccable/` (gitignored; reinstall via `npx impeccable install`). A `DESIGN.md` (visual system: colors, typography, components) hasn't been generated yet — produce one once the design system settles.
 
 ## What this project is
 
@@ -42,18 +62,31 @@ Vehicle plate lookup has no confirmed public API for the Georgian government reg
 
 Row-level security should be scoped per business — this is a multi-tenant data model from the start, not single-tenant with multi-tenancy bolted on later.
 
-## Build roadmap (intended order)
+## Confirmed product decisions (do not revert)
 
-1. Scaffold Expo project + Supabase project + business-owner auth
-2. Onboarding flow: business type → working hours → services
-3. Supabase tables from the data model above, with per-business RLS
-4. Job intake screen: manual plate/vehicle entry, service multi-select, slot assignment
-5. Whiteboard: kanban board, drag-and-drop, realtime sync via Supabase Realtime
-6. WhatsApp integration: Edge Function sending template messages on the 5 in-scope trigger events
-7. BOG payment integration: Edge Function to generate payment links + webhook receiver
-8. Basic day/week calendar view (same underlying job data as the whiteboard)
-9. Internal pilot with Carbros + 1-2 network detailers
-10. Phase 2 kickoff (photo/video, tech inspection reminders) — only after MVP is validated
+These deliberately diverge from the original TRD text. They were made with Niko after hands-on testing — treat them as the spec, don't "correct" them back toward the TRD:
+
+- **Calendar replaces the kanban whiteboard.** The TRD's drag-and-drop kanban (step 5) was built, tested, and rejected. The month-grid + day-list calendar with status/service filters is the scheduling surface. The day view is a chronological card list, **not** an hour-ruler grid (also explicitly rejected) — detailing jobs run from hours to days, so jobs have an explicit from/to range instead of a slot on a ruler.
+- **Summary stats show GEL amounts, not counts** (period summaries and dashboard).
+- **Order edit screen** exists at `jobs/[id]/edit.tsx`; the quick status-change modal on the day view stays one tap, with "Edit order" one tap further.
+- **Home dashboard stat balloons**, including visually muted "Coming soon" placeholders for the Phase 2/3 logistics/material-purchases module — placeholders are intentional, not broken.
+
+## Build roadmap (revised order, July 2026)
+
+**Approach change (confirmed with Niko):** build the full MVP app experience — all core screens and flows working with real data — *before* touching external integrations. WhatsApp and BOG move to the end. Where they will eventually plug in (e.g. "send WhatsApp confirmation" after job creation, "generate payment link" on completion), add clearly marked seams — placeholder functions/UI states with `TODO` comments referencing the TRD section — not working stubs.
+
+1. ~~Scaffold + Supabase + business-owner auth~~ ✅
+2. ~~Onboarding flow~~ ✅
+3. ~~Supabase tables with per-business RLS~~ ✅ (`staff`, `payments`, `messages_log` deferred to their features)
+4. ~~Job intake screen~~ ✅
+5. ~~Scheduling surface~~ ✅ (calendar, not kanban — see Confirmed product decisions)
+6. Vehicle & Customer CRM screens (TRD §5.4): vehicle profile with service history, customer profile with visit count/total spend
+7. Bilingual UI (Georgian + English): set up the i18n string pattern, backfill existing screens, apply to everything new
+8. Remaining MVP-scope gaps vs. the TRD + design consistency pass over existing screens
+9. WhatsApp integration: Edge Function sending template messages on the in-scope trigger events
+10. BOG payment integration: Edge Function to generate payment links + webhook receiver
+11. Internal pilot with Carbros + 1-2 network detailers
+12. Phase 2 kickoff (photo/video, tech inspection reminders) — only after MVP is validated
 
 ## Non-functional constraints
 
