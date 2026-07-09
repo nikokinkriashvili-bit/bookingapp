@@ -9,8 +9,11 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { colors } from "@/lib/theme";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
+import { useT } from "@/providers/LanguageProvider";
+import { sendWhatsAppMessage } from "@/lib/integrations";
 import { addMinutesToDateTime, parseDateAndTime } from "@/lib/calendarDate";
 
 type Vehicle = {
@@ -38,10 +41,14 @@ type Service = {
 };
 
 export default function NewJob() {
+  const t = useT();
   const { business } = useBusiness();
-  const { date: dateParam } = useLocalSearchParams<{ date?: string }>();
+  const { date: dateParam, plate: plateParam } = useLocalSearchParams<{
+    date?: string;
+    plate?: string;
+  }>();
 
-  const [plate, setPlate] = useState("");
+  const [plate, setPlate] = useState(plateParam?.toUpperCase() ?? "");
   const [lookingUp, setLookingUp] = useState(false);
   const [hasLookedUp, setHasLookedUp] = useState(false);
   const [foundVehicle, setFoundVehicle] = useState<Vehicle | null>(null);
@@ -172,33 +179,33 @@ export default function NewJob() {
 
     const trimmedPlate = plate.trim().toUpperCase();
     if (!trimmedPlate) {
-      setError("Enter a plate number.");
+      setError(t("job.errorPlate"));
       return;
     }
     if (selectedServiceIds.length === 0) {
-      setError("Select at least one service.");
+      setError(t("job.errorService"));
       return;
     }
     if (!fromDate || !fromTime || !toDate || !toTime) {
-      setError("Enter a from and to date/time.");
+      setError(t("job.errorFromTo"));
       return;
     }
     const scheduledSlot = parseDateAndTime(fromDate, fromTime);
     const scheduledEnd = parseDateAndTime(toDate, toTime);
     if (isNaN(scheduledSlot.getTime()) || isNaN(scheduledEnd.getTime())) {
-      setError("Date/time format is invalid. Use YYYY-MM-DD and HH:MM.");
+      setError(t("job.errorDateFormat"));
       return;
     }
     if (scheduledEnd <= scheduledSlot) {
-      setError("The end time must be after the start time.");
+      setError(t("job.errorEndAfterStart"));
       return;
     }
     if (selectedCustomerId === "new" && (!customerName.trim() || !customerPhone.trim())) {
-      setError("Enter the customer's name and phone.");
+      setError(t("job.errorCustomerDetails"));
       return;
     }
     if (!selectedCustomerId) {
-      setError("Select or add a customer.");
+      setError(t("job.errorSelectCustomer"));
       return;
     }
 
@@ -262,16 +269,20 @@ export default function NewJob() {
       }
     }
 
-    const { error: jobError } = await supabase.from("jobs").insert({
-      business_id: business.id,
-      vehicle_id: vehicleId,
-      customer_id: customerId,
-      service_ids: selectedServiceIds,
-      status: "booked",
-      scheduled_slot: scheduledSlot.toISOString(),
-      scheduled_end: scheduledEnd.toISOString(),
-      price_total: price.trim() ? Number(price) : 0,
-    });
+    const { data: createdJob, error: jobError } = await supabase
+      .from("jobs")
+      .insert({
+        business_id: business.id,
+        vehicle_id: vehicleId,
+        customer_id: customerId,
+        service_ids: selectedServiceIds,
+        status: "booked",
+        scheduled_slot: scheduledSlot.toISOString(),
+        scheduled_end: scheduledEnd.toISOString(),
+        price_total: price.trim() ? Number(price) : 0,
+      })
+      .select("id")
+      .single();
 
     setSubmitting(false);
 
@@ -280,16 +291,21 @@ export default function NewJob() {
       return;
     }
 
+    if (createdJob) {
+      // TODO(TRD §5.5): booking-confirmed WhatsApp fires here once step 9 lands.
+      await sendWhatsAppMessage("booking_confirmed", createdJob.id);
+    }
+
     router.replace("/");
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>New order</Text>
+      <Text style={styles.title}>{t("job.newOrderTitle")}</Text>
 
       <TextInput
         style={styles.plateInput}
-        placeholder="PLATE NUMBER"
+        placeholder={t("job.platePlaceholder")}
         autoCapitalize="characters"
         value={plate}
         onChangeText={(v) => setPlate(v.toUpperCase())}
@@ -298,10 +314,10 @@ export default function NewJob() {
 
       {hasLookedUp && foundVehicle ? (
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>
-            Found: {foundVehicle.make} {foundVehicle.model}
+          <Text style={styles.foundText}>
+            {t("job.found")} {foundVehicle.make} {foundVehicle.model}
           </Text>
-          <Text style={styles.sectionLabel}>Customer</Text>
+          <Text style={styles.sectionLabel}>{t("job.customer")}</Text>
           {linkedCustomers.map((c) => (
             <Pressable
               key={c.id}
@@ -336,7 +352,7 @@ export default function NewJob() {
                   : styles.optionText
               }
             >
-              + Add new customer
+              {t("job.addNewCustomer")}
             </Text>
           </Pressable>
         </View>
@@ -344,20 +360,20 @@ export default function NewJob() {
 
       {hasLookedUp && !foundVehicle ? (
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Vehicle details</Text>
-          <TextInput style={styles.input} placeholder="Make" value={make} onChangeText={setMake} />
-          <TextInput style={styles.input} placeholder="Model" value={model} onChangeText={setModel} />
+          <Text style={styles.sectionLabel}>{t("job.vehicleDetails")}</Text>
+          <TextInput style={styles.input} placeholder={t("vehicle.make")} value={make} onChangeText={setMake} />
+          <TextInput style={styles.input} placeholder={t("vehicle.model")} value={model} onChangeText={setModel} />
           <TextInput
             style={styles.input}
-            placeholder="Year"
+            placeholder={t("vehicle.year")}
             keyboardType="numeric"
             value={year}
             onChangeText={setYear}
           />
-          <TextInput style={styles.input} placeholder="Colour" value={colour} onChangeText={setColour} />
+          <TextInput style={styles.input} placeholder={t("vehicle.colour")} value={colour} onChangeText={setColour} />
           <TextInput
             style={styles.input}
-            placeholder="Fuel type"
+            placeholder={t("vehicle.fuelType")}
             value={fuelType}
             onChangeText={setFuelType}
           />
@@ -366,16 +382,16 @@ export default function NewJob() {
 
       {hasLookedUp && selectedCustomerId === "new" ? (
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Customer details</Text>
+          <Text style={styles.sectionLabel}>{t("job.customerDetails")}</Text>
           <TextInput
             style={styles.input}
-            placeholder="Name"
+            placeholder={t("customer.name")}
             value={customerName}
             onChangeText={setCustomerName}
           />
           <TextInput
             style={styles.input}
-            placeholder="Phone"
+            placeholder={t("customer.phone")}
             keyboardType="phone-pad"
             value={customerPhone}
             onChangeText={setCustomerPhone}
@@ -384,7 +400,7 @@ export default function NewJob() {
       ) : null}
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Services</Text>
+        <Text style={styles.sectionLabel}>{t("job.services")}</Text>
         {services.map((s) => (
           <Pressable
             key={s.id}
@@ -401,18 +417,20 @@ export default function NewJob() {
                   : styles.optionText
               }
             >
-              {s.name} · {s.duration_minutes}min
-              {s.price_gel ? ` · ${s.price_gel} GEL` : ""}
+              {s.name} · {s.duration_minutes}{t("common.minShort")}
+              {s.price_gel ? ` · ${s.price_gel} ₾` : ""}
             </Text>
           </Pressable>
         ))}
         {selectedServiceIds.length > 0 ? (
-          <Text style={styles.totalText}>Duration: {totalMinutes}min</Text>
+          <Text style={styles.totalText}>
+            {t("common.duration")}: {totalMinutes}{t("common.minShort")}
+          </Text>
         ) : null}
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Price (GEL)</Text>
+        <Text style={styles.sectionLabel}>{t("job.priceGel")}</Text>
         <TextInput
           style={styles.input}
           placeholder="0"
@@ -423,8 +441,8 @@ export default function NewJob() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Schedule</Text>
-        <Text style={styles.subLabel}>From</Text>
+        <Text style={styles.sectionLabel}>{t("job.schedule")}</Text>
+        <Text style={styles.subLabel}>{t("job.from")}</Text>
         <TextInput
           style={styles.input}
           placeholder="YYYY-MM-DD"
@@ -437,7 +455,7 @@ export default function NewJob() {
           value={fromTime}
           onChangeText={setFromTime}
         />
-        <Text style={styles.subLabel}>To</Text>
+        <Text style={styles.subLabel}>{t("job.to")}</Text>
         <TextInput
           style={styles.input}
           placeholder="YYYY-MM-DD"
@@ -458,7 +476,7 @@ export default function NewJob() {
         {submitting ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Create order</Text>
+          <Text style={styles.buttonText}>{t("job.createOrder")}</Text>
         )}
       </Pressable>
     </ScrollView>
@@ -478,7 +496,7 @@ const styles = StyleSheet.create({
   },
   plateInput: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: colors.line,
     borderRadius: 8,
     padding: 16,
     fontSize: 22,
@@ -491,47 +509,54 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   sectionLabel: {
-    fontSize: 14,
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.inkSoft,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  foundText: {
+    fontSize: 15,
     fontWeight: "600",
-    color: "#555",
+    color: colors.ink,
   },
   subLabel: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#999",
+    color: colors.muted,
     marginTop: 6,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: colors.line,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
   },
   option: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: colors.line,
     borderRadius: 8,
     padding: 12,
   },
   optionSelected: {
-    borderColor: "#208AEF",
-    backgroundColor: "#e8f2fd",
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryFaint,
   },
   optionText: {
     fontSize: 15,
   },
   optionTextSelected: {
-    color: "#208AEF",
+    color: colors.primary,
     fontWeight: "600",
   },
   totalText: {
     fontSize: 14,
-    color: "#555",
+    color: colors.inkSoft,
     marginTop: 4,
   },
   button: {
-    backgroundColor: "#208AEF",
+    backgroundColor: colors.primary,
     borderRadius: 8,
     padding: 14,
     alignItems: "center",
@@ -543,6 +568,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   error: {
-    color: "#d33",
+    color: colors.danger,
   },
 });
