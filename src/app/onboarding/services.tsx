@@ -9,12 +9,15 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { colors } from "@/lib/theme";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/providers/AuthProvider";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useOnboarding } from "@/providers/OnboardingProvider";
+import { useT } from "@/providers/LanguageProvider";
 
 export default function ServicesStep() {
+  const t = useT();
   const { session } = useAuth();
   const { refetch } = useBusiness();
   const { businessName, businessType, workingHours, services, setServices } =
@@ -57,7 +60,7 @@ export default function ServicesStep() {
 
     const validServices = services.filter((s) => s.name.trim());
     if (validServices.length === 0) {
-      setError("Add at least one service.");
+      setError(t("onboarding.errorNoServices"));
       return;
     }
 
@@ -76,7 +79,7 @@ export default function ServicesStep() {
 
     if (businessError || !business) {
       setSubmitting(false);
-      setError(businessError?.message ?? "Failed to create business.");
+      setError(businessError?.message ?? t("onboarding.errorCreateBusiness"));
       return;
     }
 
@@ -102,26 +105,26 @@ export default function ServicesStep() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Services</Text>
+      <Text style={styles.title}>{t("onboarding.servicesTitle")}</Text>
 
       {services.map((service, index) => (
         <View key={index} style={styles.serviceRow}>
           <TextInput
             style={[styles.input, styles.serviceName]}
-            placeholder="Service name"
+            placeholder={t("onboarding.serviceName")}
             value={service.name}
             onChangeText={(v) => updateService(index, "name", v)}
           />
           <TextInput
             style={[styles.input, styles.serviceDuration]}
-            placeholder="Min"
+            placeholder={t("onboarding.serviceMin")}
             keyboardType="numeric"
             value={String(service.durationMinutes)}
             onChangeText={(v) => updateService(index, "durationMinutes", v)}
           />
           <TextInput
             style={[styles.input, styles.servicePrice]}
-            placeholder="GEL"
+            placeholder={t("onboarding.serviceGel")}
             keyboardType="numeric"
             value={service.priceGel}
             onChangeText={(v) => updateService(index, "priceGel", v)}
@@ -133,7 +136,7 @@ export default function ServicesStep() {
       ))}
 
       <Pressable style={styles.addButton} onPress={addService}>
-        <Text style={styles.addButtonText}>+ Add service</Text>
+        <Text style={styles.addButtonText}>{t("onboarding.addService")}</Text>
       </Pressable>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -142,7 +145,7 @@ export default function ServicesStep() {
         {submitting ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Finish setup</Text>
+          <Text style={styles.buttonText}>{t("onboarding.finish")}</Text>
         )}
       </Pressable>
     </ScrollView>
@@ -167,7 +170,7 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: colors.line,
     borderRadius: 8,
     padding: 10,
     fontSize: 14,
@@ -186,18 +189,18 @@ const styles = StyleSheet.create({
   },
   removeButtonText: {
     fontSize: 20,
-    color: "#d33",
+    color: colors.danger,
   },
   addButton: {
     padding: 10,
     alignItems: "center",
   },
   addButtonText: {
-    color: "#208AEF",
+    color: colors.primary,
     fontSize: 15,
   },
   button: {
-    backgroundColor: "#208AEF",
+    backgroundColor: colors.primary,
     borderRadius: 8,
     padding: 14,
     alignItems: "center",
@@ -209,6 +212,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   error: {
-    color: "#d33",
+    color: colors.danger,
   },
 });

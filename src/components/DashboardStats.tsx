@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { colors } from "@/lib/theme";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
+import { useT } from "@/providers/LanguageProvider";
+import { formatGel } from "@/lib/i18n";
 import { addMonths, startOfMonth } from "@/lib/calendarDate";
 
 type Stats = {
@@ -14,6 +17,7 @@ type Stats = {
 const CURRENT_STATUSES = ["booked", "in_progress", "awaiting_collection"];
 
 export function DashboardStats() {
+  const t = useT();
   const { business } = useBusiness();
   const [stats, setStats] = useState<Stats | null>(null);
 
@@ -82,27 +86,27 @@ export function DashboardStats() {
     <View style={styles.grid}>
       <View style={[styles.balloon, { backgroundColor: "#2ECC71" }]}>
         <Text style={styles.value}>{stats.carsServiced}</Text>
-        <Text style={styles.label}>Cars serviced (last month)</Text>
+        <Text style={styles.label}>{t("dash.carsServiced")}</Text>
       </View>
       <View style={[styles.balloon, { backgroundColor: "#16A085" }]}>
-        <Text style={styles.value}>{stats.revenue.toFixed(0)} GEL</Text>
-        <Text style={styles.label}>Revenue (last month)</Text>
+        <Text style={styles.value}>{formatGel(stats.revenue)}</Text>
+        <Text style={styles.label}>{t("dash.revenue")}</Text>
       </View>
       <View style={[styles.balloon, { backgroundColor: "#607D8B" }]}>
-        <Text style={styles.value}>{stats.pendingPayments.toFixed(0)} GEL</Text>
-        <Text style={styles.label}>Pending payments</Text>
+        <Text style={styles.value}>{formatGel(stats.pendingPayments)}</Text>
+        <Text style={styles.label}>{t("dash.pendingPayments")}</Text>
       </View>
-      <View style={[styles.balloon, { backgroundColor: "#208AEF" }]}>
+      <View style={[styles.balloon, { backgroundColor: colors.primary }]}>
         <Text style={styles.value}>{stats.currentJobs}</Text>
-        <Text style={styles.label}>Current jobs</Text>
+        <Text style={styles.label}>{t("dash.currentJobs")}</Text>
       </View>
       <View style={[styles.balloon, styles.placeholder]}>
-        <Text style={styles.placeholderValue}>Coming soon</Text>
-        <Text style={styles.placeholderLabel}>Material purchases (this month)</Text>
+        <Text style={styles.placeholderValue}>{t("dash.comingSoon")}</Text>
+        <Text style={styles.placeholderLabel}>{t("dash.materialsThisMonth")}</Text>
       </View>
       <View style={[styles.balloon, styles.placeholder]}>
-        <Text style={styles.placeholderValue}>Coming soon</Text>
-        <Text style={styles.placeholderLabel}>Material purchases (last month)</Text>
+        <Text style={styles.placeholderValue}>{t("dash.comingSoon")}</Text>
+        <Text style={styles.placeholderLabel}>{t("dash.materialsLastMonth")}</Text>
       </View>
     </View>
   );
@@ -133,16 +137,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   placeholder: {
-    backgroundColor: "#e0e0e0",
+    backgroundColor: colors.line,
   },
   placeholderValue: {
-    color: "#999",
+    color: colors.muted,
     fontSize: 14,
     fontWeight: "700",
     fontStyle: "italic",
   },
   placeholderLabel: {
-    color: "#999",
+    color: colors.muted,
     fontSize: 11,
     marginTop: 4,
   },

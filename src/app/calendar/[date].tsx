@@ -9,8 +9,10 @@ import {
   Text,
   View,
 } from "react-native";
+import { colors } from "@/lib/theme";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
+import { useLanguage } from "@/providers/LanguageProvider";
 import { PeriodSummary } from "@/components/PeriodSummary";
 import { CalendarFiltersButton } from "@/components/CalendarFiltersButton";
 import { useCalendarFilters } from "@/providers/CalendarFilterProvider";
@@ -18,10 +20,12 @@ import type { Weekday } from "@/lib/businessTypes";
 import {
   STATUS_COLORS,
   STATUS_ORDER,
-  STATUS_LABELS,
+  statusLabelKey,
   summarizeJobs,
   type JobStatus,
 } from "@/lib/jobStatus";
+import { formatGel, localeFor } from "@/lib/i18n";
+import { generateBogPaymentLink, sendWhatsAppMessage } from "@/lib/integrations";
 import { addDays, fromDateKey, startOfDay, toDateKey } from "@/lib/calendarDate";
 
 type JobRow = {
@@ -37,23 +41,25 @@ type JobRow = {
 
 const JS_DAY_TO_WEEKDAY: Weekday[] = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
-function formatRange(job: JobRow): string {
+function formatRange(job: JobRow, locale: string): string {
   const start = new Date(job.scheduled_slot);
   const end = new Date(job.scheduled_end);
   const time = (d: Date) =>
-    d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+    d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
   const sameDay = toDateKey(start) === toDateKey(end);
   if (sameDay) {
     return `${time(start)} – ${time(end)}`;
   }
   const withDay = (d: Date) =>
-    `${d.toLocaleDateString(undefined, { weekday: "short" })} ${time(d)}`;
+    `${d.toLocaleDateString(locale, { weekday: "short" })} ${time(d)}`;
   return `${withDay(start)} → ${withDay(end)}`;
 }
 
 export default function CalendarDay() {
   const { date } = useLocalSearchParams<{ date: string }>();
   const { business } = useBusiness();
+  const { language, t } = useLanguage();
+  const locale = localeFor(language);
   const { isJobVisible } = useCalendarFilters();
   const selectedDate = fromDateKey(date);
   const [jobs, setJobs] = useState<JobRow[]>([]);
@@ -104,6 +110,15 @@ export default function CalendarDay() {
   const changeStatus = async (jobId: string, newStatus: JobStatus) => {
     setSelectedJob(null);
     await supabase.from("jobs").update({ status: newStatus }).eq("id", jobId);
+    if (newStatus === "in_progress") {
+      await sendWhatsAppMessage("job_started", jobId);
+    }
+    if (newStatus === "complete") {
+      // TODO(TRD §5.5, §7.2): job-complete WhatsApp + BOG payment link fire
+      // here once steps 9–10 land.
+      await sendWhatsAppMessage("job_complete", jobId);
+      await generateBogPaymentLink(jobId);
+    }
   };
 
   const editOrder = () => {
@@ -129,21 +144,22 @@ export default function CalendarDay() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Link href="/calendar" style={styles.backLink}>
-          {"< Month"}
+          {"< "}
+          {t("calendar.month")}
         </Link>
         <Pressable style={styles.navButton} onPress={() => goToDay(-1)}>
           <Text style={styles.navButtonText}>{"<"}</Text>
         </Pressable>
         <View style={styles.headerCenter}>
           <Text style={styles.dateText}>
-            {selectedDate.toLocaleDateString(undefined, {
+            {selectedDate.toLocaleDateString(locale, {
               weekday: "short",
               month: "short",
               day: "numeric",
             })}
           </Text>
           <Pressable onPress={() => router.replace(`/calendar/${toDateKey(new Date())}`)}>
-            <Text style={styles.todayLink}>Today</Text>
+            <Text style={styles.todayLink}>{t("calendar.today")}</Text>
           </Pressable>
         </View>
         <Pressable style={styles.navButton} onPress={() => goToDay(1)}>
@@ -153,7 +169,7 @@ export default function CalendarDay() {
       </View>
 
       <Link href={`/jobs/new?date=${date}`} style={styles.addButton}>
-        + Add new order
+        {t("home.addNewOrder")}
       </Link>
 
       <PeriodSummary {...summarizeJobs(visibleJobs)} />
@@ -164,12 +180,12 @@ export default function CalendarDay() {
         </View>
       ) : isClosed ? (
         <View style={styles.centered}>
-          <Text style={styles.closedText}>Closed</Text>
+          <Text style={styles.closedText}>{t("common.closed")}</Text>
         </View>
       ) : (
         <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
           {visibleJobs.length === 0 ? (
-            <Text style={styles.emptyText}>No orders this day.</Text>
+            <Text style={styles.emptyText}>{t("calendar.noOrders")}</Text>
           ) : (
             visibleJobs.map((job) => (
               <Pressable
@@ -183,9 +199,9 @@ export default function CalendarDay() {
                     .join(" ")}
                 </Text>
                 <Text style={styles.cardDetail}>{job.customers?.name ?? "?"}</Text>
-                <Text style={styles.cardDetail}>{formatRange(job)}</Text>
+                <Text style={styles.cardDetail}>{formatRange(job, locale)}</Text>
                 {job.price_total ? (
-                  <Text style={styles.cardDetail}>{job.price_total} GEL</Text>
+                  <Text style={styles.cardDetail}>{formatGel(job.price_total)}</Text>
                 ) : null}
               </Pressable>
             ))
@@ -206,10 +222,10 @@ export default function CalendarDay() {
             </Text>
 
             <Pressable style={styles.modalOption} onPress={editOrder}>
-              <Text style={styles.editOrderText}>Edit order</Text>
+              <Text style={styles.editOrderText}>{t("job.editOrderTitle")}</Text>
             </Pressable>
 
-            <Text style={styles.modalSubtitle}>Change status to...</Text>
+            <Text style={styles.modalSubtitle}>{t("calendar.changeStatus")}</Text>
             {STATUS_ORDER.filter((s) => s !== selectedJob?.status).map((status) => (
               <Pressable
                 key={status}
@@ -219,7 +235,7 @@ export default function CalendarDay() {
                 <View
                   style={[styles.modalDot, { backgroundColor: STATUS_COLORS[status] }]}
                 />
-                <Text style={styles.modalOptionText}>{STATUS_LABELS[status]}</Text>
+                <Text style={styles.modalOptionText}>{t(statusLabelKey(status))}</Text>
               </Pressable>
             ))}
           </View>
@@ -232,6 +248,7 @@ export default function CalendarDay() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.bg,
   },
   centered: {
     flex: 1,
@@ -244,11 +261,11 @@ const styles = StyleSheet.create({
     padding: 12,
     gap: 4,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: colors.faintLine,
   },
   backLink: {
     fontSize: 13,
-    color: "#208AEF",
+    color: colors.primary,
     marginRight: 8,
   },
   navButton: {
@@ -257,7 +274,7 @@ const styles = StyleSheet.create({
   navButtonText: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#208AEF",
+    color: colors.primary,
   },
   headerCenter: {
     flex: 1,
@@ -269,11 +286,11 @@ const styles = StyleSheet.create({
   },
   todayLink: {
     fontSize: 12,
-    color: "#208AEF",
+    color: colors.primary,
     marginTop: 2,
   },
   addButton: {
-    backgroundColor: "#208AEF",
+    backgroundColor: colors.primary,
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
@@ -286,7 +303,7 @@ const styles = StyleSheet.create({
   },
   closedText: {
     fontSize: 16,
-    color: "#999",
+    color: colors.muted,
   },
   list: {
     flex: 1,
@@ -296,13 +313,13 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   emptyText: {
-    color: "#999",
+    color: colors.muted,
     textAlign: "center",
     marginTop: 24,
   },
   card: {
     borderWidth: 1,
-    borderColor: "#eee",
+    borderColor: colors.faintLine,
     borderLeftWidth: 5,
     borderRadius: 8,
     padding: 12,
@@ -314,7 +331,7 @@ const styles = StyleSheet.create({
   },
   cardDetail: {
     fontSize: 13,
-    color: "#555",
+    color: colors.inkSoft,
   },
   modalBackdrop: {
     flex: 1,
@@ -337,13 +354,13 @@ const styles = StyleSheet.create({
   modalSubtitle: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#999",
+    color: colors.muted,
     marginTop: 10,
     marginBottom: 2,
   },
   editOrderText: {
     fontSize: 15,
-    color: "#208AEF",
+    color: colors.primary,
     fontWeight: "600",
   },
   modalOption: {

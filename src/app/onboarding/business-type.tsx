@@ -9,11 +9,14 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { colors } from "@/lib/theme";
 import type { BusinessType } from "@/lib/businessTypes";
 import { useCatalog } from "@/providers/CatalogProvider";
 import { useOnboarding } from "@/providers/OnboardingProvider";
+import { useT } from "@/providers/LanguageProvider";
 
 export default function BusinessTypeStep() {
+  const t = useT();
   const { businessTypes, isLoading: isCatalogLoading, error: catalogError } =
     useCatalog();
   const {
@@ -32,16 +35,16 @@ export default function BusinessTypeStep() {
 
   const onContinue = () => {
     if (!businessName.trim()) {
-      setError("Enter your business name.");
+      setError(t("onboarding.errorName"));
       return;
     }
     if (!businessType) {
-      setError("Choose a business type.");
+      setError(t("onboarding.errorType"));
       return;
     }
-    const config = businessTypes.find((t) => t.value === businessType);
+    const config = businessTypes.find((bt) => bt.value === businessType);
     if (!config) {
-      setError("Unknown business type.");
+      setError(t("onboarding.errorUnknownType"));
       return;
     }
     setWorkingHours(config.defaultHours);
@@ -62,16 +65,16 @@ export default function BusinessTypeStep() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Tell us about your business</Text>
+      <Text style={styles.title}>{t("onboarding.title")}</Text>
 
       <TextInput
         style={styles.input}
-        placeholder="Business name"
+        placeholder={t("onboarding.businessName")}
         value={businessName}
         onChangeText={setBusinessName}
       />
 
-      <Text style={styles.label}>Business type</Text>
+      <Text style={styles.label}>{t("onboarding.businessType")}</Text>
       {catalogError ? <Text style={styles.error}>{catalogError}</Text> : null}
       {businessTypes.map((type) => (
         <Pressable
@@ -96,7 +99,7 @@ export default function BusinessTypeStep() {
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <Pressable style={styles.button} onPress={onContinue}>
-        <Text style={styles.buttonText}>Continue</Text>
+        <Text style={styles.buttonText}>{t("onboarding.continue")}</Text>
       </Pressable>
     </ScrollView>
   );
@@ -122,34 +125,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     marginTop: 12,
-    color: "#555",
+    color: colors.inkSoft,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: colors.line,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
   },
   option: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: colors.line,
     borderRadius: 8,
     padding: 14,
   },
   optionSelected: {
-    borderColor: "#208AEF",
-    backgroundColor: "#e8f2fd",
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryFaint,
   },
   optionText: {
     fontSize: 16,
   },
   optionTextSelected: {
-    color: "#208AEF",
+    color: colors.primary,
     fontWeight: "600",
   },
   button: {
-    backgroundColor: "#208AEF",
+    backgroundColor: colors.primary,
     borderRadius: 8,
     padding: 14,
     alignItems: "center",
@@ -161,6 +164,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   error: {
-    color: "#d33",
+    color: colors.danger,
   },
 });

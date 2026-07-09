@@ -1,3 +1,5 @@
+import { colors } from "@/lib/theme";
+
 export type JobStatus =
   | "booked"
   | "in_progress"
@@ -15,17 +17,14 @@ export const STATUS_ORDER: JobStatus[] = [
   "cancelled",
 ];
 
-export const STATUS_LABELS: Record<JobStatus, string> = {
-  booked: "Booked",
-  in_progress: "In Progress",
-  awaiting_collection: "Awaiting Collection",
-  complete: "Complete",
-  paid: "Paid",
-  cancelled: "Cancelled",
-};
+// Status display names live in the i18n string table ("status.<value>") so
+// they localize; use statusLabelKey(status) with useT().
+export function statusLabelKey(status: JobStatus) {
+  return `status.${status}` as const;
+}
 
 export const STATUS_COLORS: Record<JobStatus, string> = {
-  booked: "#208AEF",
+  booked: colors.primary,
   in_progress: "#F5A623",
   awaiting_collection: "#9B59B6",
   complete: "#2ECC71",

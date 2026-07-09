@@ -8,15 +8,18 @@ import {
   Text,
   View,
 } from "react-native";
+import { colors } from "@/lib/theme";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
+import { useLanguage } from "@/providers/LanguageProvider";
 import { PeriodSummary } from "@/components/PeriodSummary";
 import { CalendarFiltersButton } from "@/components/CalendarFiltersButton";
 import { useCalendarFilters } from "@/providers/CalendarFilterProvider";
 import { STATUS_COLORS, summarizeJobs, type JobStatus } from "@/lib/jobStatus";
+import { localeFor, type StringKey } from "@/lib/i18n";
 import { addDays, addMonths, startOfMonth, toDateKey } from "@/lib/calendarDate";
 
-const WEEKDAY_HEADER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEKDAY_HEADER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 const MAX_CHIPS_PER_CELL = 6;
 
 type JobRow = {
@@ -34,6 +37,7 @@ function mondayOnOrBefore(date: Date): Date {
 
 export default function CalendarMonth() {
   const { business } = useBusiness();
+  const { language, t } = useLanguage();
   const { isJobVisible } = useCalendarFilters();
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
   const [jobs, setJobs] = useState<JobRow[]>([]);
@@ -106,7 +110,10 @@ export default function CalendarMonth() {
           <Text style={styles.navButtonText}>{"<"}</Text>
         </Pressable>
         <Text style={styles.monthText}>
-          {month.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+          {month.toLocaleDateString(localeFor(language), {
+            month: "long",
+            year: "numeric",
+          })}
         </Text>
         <Pressable style={styles.navButton} onPress={() => setMonth((m) => addMonths(m, 1))}>
           <Text style={styles.navButtonText}>{">"}</Text>
@@ -115,7 +122,7 @@ export default function CalendarMonth() {
       </View>
 
       <Link href="/jobs/new" style={styles.addButton}>
-        + Add new order
+        {t("home.addNewOrder")}
       </Link>
 
       <PeriodSummary {...summary} />
@@ -123,7 +130,7 @@ export default function CalendarMonth() {
       <View style={styles.weekdayRow}>
         {WEEKDAY_HEADER.map((d) => (
           <Text key={d} style={styles.weekdayLabel}>
-            {d}
+            {t(`weekdayShort.${d}` as StringKey)}
           </Text>
         ))}
       </View>
@@ -156,14 +163,14 @@ export default function CalendarMonth() {
                       <Text style={styles.chipText} numberOfLines={1}>
                         {[job.vehicles?.make, job.vehicles?.model]
                           .filter(Boolean)
-                          .join(" ") || "Vehicle"}
+                          .join(" ") || t("calendar.vehicleFallback")}
                         {job.price_total ? ` · ${job.price_total}` : ""}
                       </Text>
                     </View>
                   ))}
                   {dayJobs.length > MAX_CHIPS_PER_CELL ? (
                     <Text style={styles.moreText}>
-                      +{dayJobs.length - MAX_CHIPS_PER_CELL} more
+                      +{dayJobs.length - MAX_CHIPS_PER_CELL} {t("calendar.more")}
                     </Text>
                   ) : null}
                 </Pressable>
@@ -179,6 +186,7 @@ export default function CalendarMonth() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.bg,
   },
   centered: {
     flex: 1,
@@ -192,7 +200,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     gap: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: colors.faintLine,
   },
   navButton: {
     padding: 8,
@@ -200,7 +208,7 @@ const styles = StyleSheet.create({
   navButtonText: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#208AEF",
+    color: colors.primary,
   },
   monthText: {
     flex: 1,
@@ -209,7 +217,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   addButton: {
-    backgroundColor: "#208AEF",
+    backgroundColor: colors.primary,
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
@@ -228,7 +236,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "center",
     fontSize: 11,
-    color: "#999",
+    color: colors.muted,
     fontWeight: "600",
   },
   grid: {
@@ -239,18 +247,18 @@ const styles = StyleSheet.create({
     width: "14.2857%",
     minHeight: 90,
     borderWidth: 0.5,
-    borderColor: "#f0f0f0",
+    borderColor: colors.faintLine,
     padding: 3,
   },
   cellToday: {
-    backgroundColor: "#e8f2fd",
+    backgroundColor: colors.primaryFaint,
   },
   cellDay: {
     fontSize: 12,
     fontWeight: "600",
   },
   cellDayMuted: {
-    color: "#ccc",
+    color: colors.line,
   },
   chip: {
     borderRadius: 4,
@@ -265,7 +273,7 @@ const styles = StyleSheet.create({
   },
   moreText: {
     fontSize: 9,
-    color: "#999",
+    color: colors.muted,
     marginTop: 2,
   },
 });

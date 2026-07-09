@@ -8,10 +8,13 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { colors } from "@/lib/theme";
 import { useAuth } from "@/providers/AuthProvider";
+import { useT } from "@/providers/LanguageProvider";
 
 export default function Login() {
   const { session, signIn } = useAuth();
+  const t = useT();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -33,11 +36,11 @@ export default function Login() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Log in</Text>
+      <Text style={styles.title}>{t("auth.logIn")}</Text>
 
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder={t("auth.email")}
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
@@ -45,7 +48,7 @@ export default function Login() {
       />
       <TextInput
         style={styles.input}
-        placeholder="Password"
+        placeholder={t("auth.password")}
         secureTextEntry
         value={password}
         onChangeText={setPassword}
@@ -57,12 +60,12 @@ export default function Login() {
         {submitting ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Log in</Text>
+          <Text style={styles.buttonText}>{t("auth.logIn")}</Text>
         )}
       </Pressable>
 
       <Link href="/sign-up" style={styles.link}>
-        Don't have an account? Sign up
+        {t("auth.noAccount")}
       </Link>
     </View>
   );
@@ -83,13 +86,13 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: colors.line,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
   },
   button: {
-    backgroundColor: "#208AEF",
+    backgroundColor: colors.primary,
     borderRadius: 8,
     padding: 14,
     alignItems: "center",
@@ -101,11 +104,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   error: {
-    color: "#d33",
+    color: colors.danger,
   },
   link: {
     textAlign: "center",
-    color: "#208AEF",
+    color: colors.primary,
     marginTop: 12,
   },
 });

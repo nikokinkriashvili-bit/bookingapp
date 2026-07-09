@@ -1,28 +1,28 @@
 import { StyleSheet, Text, View } from "react-native";
+import { colors } from "@/lib/theme";
 import { STATUS_COLORS, type JobPeriodSummary } from "@/lib/jobStatus";
-
-function formatGel(amount: number): string {
-  return `${amount.toFixed(0)} GEL`;
-}
+import { formatGel } from "@/lib/i18n";
+import { useT } from "@/providers/LanguageProvider";
 
 export function PeriodSummary({ total, completed, pending, paid }: JobPeriodSummary) {
+  const t = useT();
   return (
     <View style={styles.row}>
       <View style={[styles.pill, { backgroundColor: "#37474F" }]}>
         <Text style={styles.pillValue}>{formatGel(total)}</Text>
-        <Text style={styles.pillLabel}>Total</Text>
+        <Text style={styles.pillLabel}>{t("summary.total")}</Text>
       </View>
       <View style={[styles.pill, { backgroundColor: STATUS_COLORS.complete }]}>
         <Text style={styles.pillValue}>{formatGel(completed)}</Text>
-        <Text style={styles.pillLabel}>Completed</Text>
+        <Text style={styles.pillLabel}>{t("summary.completed")}</Text>
       </View>
       <View style={[styles.pill, { backgroundColor: "#607D8B" }]}>
         <Text style={styles.pillValue}>{formatGel(pending)}</Text>
-        <Text style={styles.pillLabel}>Pending</Text>
+        <Text style={styles.pillLabel}>{t("summary.pending")}</Text>
       </View>
       <View style={[styles.pill, { backgroundColor: STATUS_COLORS.paid }]}>
         <Text style={styles.pillValue}>{formatGel(paid)}</Text>
-        <Text style={styles.pillLabel}>Payment status</Text>
+        <Text style={styles.pillLabel}>{t("summary.paid")}</Text>
       </View>
     </View>
   );

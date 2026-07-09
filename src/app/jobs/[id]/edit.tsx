@@ -9,10 +9,12 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { colors } from "@/lib/theme";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
+import { useT } from "@/providers/LanguageProvider";
 import { parseDateAndTime, toDateKey, toTimeString } from "@/lib/calendarDate";
-import { STATUS_LABELS, STATUS_ORDER, type JobStatus } from "@/lib/jobStatus";
+import { STATUS_ORDER, statusLabelKey, type JobStatus } from "@/lib/jobStatus";
 
 type Service = {
   id: string;
@@ -33,6 +35,7 @@ type JobDetail = {
 };
 
 export default function EditJob() {
+  const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { business } = useBusiness();
 
@@ -104,21 +107,21 @@ export default function EditJob() {
     setError(null);
 
     if (selectedServiceIds.length === 0) {
-      setError("Select at least one service.");
+      setError(t("job.errorService"));
       return;
     }
     if (!fromDate || !fromTime || !toDate || !toTime) {
-      setError("Enter a from and to date/time.");
+      setError(t("job.errorFromTo"));
       return;
     }
     const scheduledSlot = parseDateAndTime(fromDate, fromTime);
     const scheduledEnd = parseDateAndTime(toDate, toTime);
     if (isNaN(scheduledSlot.getTime()) || isNaN(scheduledEnd.getTime())) {
-      setError("Date/time format is invalid. Use YYYY-MM-DD and HH:MM.");
+      setError(t("job.errorDateFormat"));
       return;
     }
     if (scheduledEnd <= scheduledSlot) {
-      setError("The end time must be after the start time.");
+      setError(t("job.errorEndAfterStart"));
       return;
     }
 
@@ -154,14 +157,14 @@ export default function EditJob() {
   if (!job) {
     return (
       <View style={styles.centered}>
-        <Text>Order not found.</Text>
+        <Text>{t("job.orderNotFound")}</Text>
       </View>
     );
   }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Edit order</Text>
+      <Text style={styles.title}>{t("job.editOrderTitle")}</Text>
 
       <View style={styles.section}>
         <Text style={styles.readOnlyPlate}>{job.vehicles?.plate_number}</Text>
@@ -174,7 +177,7 @@ export default function EditJob() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Status</Text>
+        <Text style={styles.sectionLabel}>{t("job.status")}</Text>
         {STATUS_ORDER.map((s) => (
           <Pressable
             key={s}
@@ -182,14 +185,14 @@ export default function EditJob() {
             onPress={() => setStatus(s)}
           >
             <Text style={status === s ? styles.optionTextSelected : styles.optionText}>
-              {STATUS_LABELS[s]}
+              {t(statusLabelKey(s))}
             </Text>
           </Pressable>
         ))}
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Services</Text>
+        <Text style={styles.sectionLabel}>{t("job.services")}</Text>
         {services.map((s) => (
           <Pressable
             key={s.id}
@@ -206,18 +209,20 @@ export default function EditJob() {
                   : styles.optionText
               }
             >
-              {s.name} · {s.duration_minutes}min
-              {s.price_gel ? ` · ${s.price_gel} GEL` : ""}
+              {s.name} · {s.duration_minutes}{t("common.minShort")}
+              {s.price_gel ? ` · ${s.price_gel} ₾` : ""}
             </Text>
           </Pressable>
         ))}
         {selectedServiceIds.length > 0 ? (
-          <Text style={styles.totalText}>Duration: {totalMinutes}min</Text>
+          <Text style={styles.totalText}>
+            {t("common.duration")}: {totalMinutes}{t("common.minShort")}
+          </Text>
         ) : null}
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Price (GEL)</Text>
+        <Text style={styles.sectionLabel}>{t("job.priceGel")}</Text>
         <TextInput
           style={styles.input}
           placeholder="0"
@@ -228,8 +233,8 @@ export default function EditJob() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Schedule</Text>
-        <Text style={styles.subLabel}>From</Text>
+        <Text style={styles.sectionLabel}>{t("job.schedule")}</Text>
+        <Text style={styles.subLabel}>{t("job.from")}</Text>
         <TextInput
           style={styles.input}
           placeholder="YYYY-MM-DD"
@@ -242,7 +247,7 @@ export default function EditJob() {
           value={fromTime}
           onChangeText={setFromTime}
         />
-        <Text style={styles.subLabel}>To</Text>
+        <Text style={styles.subLabel}>{t("job.to")}</Text>
         <TextInput
           style={styles.input}
           placeholder="YYYY-MM-DD"
@@ -263,7 +268,7 @@ export default function EditJob() {
         {submitting ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Save changes</Text>
+          <Text style={styles.buttonText}>{t("job.saveChanges")}</Text>
         )}
       </Pressable>
     </ScrollView>
@@ -291,14 +296,16 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   sectionLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#555",
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.inkSoft,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
   },
   subLabel: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#999",
+    color: colors.muted,
     marginTop: 6,
   },
   readOnlyPlate: {
@@ -308,39 +315,39 @@ const styles = StyleSheet.create({
   },
   readOnlyDetail: {
     fontSize: 14,
-    color: "#555",
+    color: colors.inkSoft,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: colors.line,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
   },
   option: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: colors.line,
     borderRadius: 8,
     padding: 12,
   },
   optionSelected: {
-    borderColor: "#208AEF",
-    backgroundColor: "#e8f2fd",
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryFaint,
   },
   optionText: {
     fontSize: 15,
   },
   optionTextSelected: {
-    color: "#208AEF",
+    color: colors.primary,
     fontWeight: "600",
   },
   totalText: {
     fontSize: 14,
-    color: "#555",
+    color: colors.inkSoft,
     marginTop: 4,
   },
   button: {
-    backgroundColor: "#208AEF",
+    backgroundColor: colors.primary,
     borderRadius: 8,
     padding: 14,
     alignItems: "center",
@@ -352,6 +359,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   error: {
-    color: "#d33",
+    color: colors.danger,
   },
 });

@@ -1,9 +1,12 @@
 import { useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { STATUS_COLORS, STATUS_LABELS, STATUS_ORDER } from "@/lib/jobStatus";
+import { colors } from "@/lib/theme";
+import { STATUS_COLORS, STATUS_ORDER, statusLabelKey } from "@/lib/jobStatus";
 import { useCalendarFilters } from "@/providers/CalendarFilterProvider";
+import { useT } from "@/providers/LanguageProvider";
 
 export function CalendarFiltersButton() {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const { services, excludedStatuses, excludedServiceIds, toggleStatus, toggleService } =
     useCalendarFilters();
@@ -14,7 +17,8 @@ export function CalendarFiltersButton() {
     <>
       <Pressable style={styles.button} onPress={() => setOpen(true)}>
         <Text style={styles.buttonText}>
-          Filters{activeCount > 0 ? ` (${activeCount})` : ""}
+          {t("filters.title")}
+          {activeCount > 0 ? ` (${activeCount})` : ""}
         </Text>
       </Pressable>
 
@@ -26,9 +30,9 @@ export function CalendarFiltersButton() {
       >
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
           <Pressable style={styles.content} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.title}>Filters</Text>
+            <Text style={styles.title}>{t("filters.title")}</Text>
             <ScrollView style={styles.scroll}>
-              <Text style={styles.sectionTitle}>Status</Text>
+              <Text style={styles.sectionTitle}>{t("filters.status")}</Text>
               {STATUS_ORDER.map((status) => {
                 const checked = !excludedStatuses.has(status);
                 return (
@@ -43,14 +47,14 @@ export function CalendarFiltersButton() {
                         checked && { backgroundColor: STATUS_COLORS[status] },
                       ]}
                     />
-                    <Text style={styles.rowText}>{STATUS_LABELS[status]}</Text>
+                    <Text style={styles.rowText}>{t(statusLabelKey(status))}</Text>
                   </Pressable>
                 );
               })}
 
-              <Text style={styles.sectionTitle}>Service</Text>
+              <Text style={styles.sectionTitle}>{t("filters.service")}</Text>
               {services.length === 0 ? (
-                <Text style={styles.emptyText}>No services yet.</Text>
+                <Text style={styles.emptyText}>{t("filters.noServices")}</Text>
               ) : (
                 services.map((service) => {
                   const checked = !excludedServiceIds.has(service.id);
@@ -70,7 +74,7 @@ export function CalendarFiltersButton() {
               )}
             </ScrollView>
             <Pressable style={styles.doneButton} onPress={() => setOpen(false)}>
-              <Text style={styles.doneButtonText}>Done</Text>
+              <Text style={styles.doneButtonText}>{t("filters.done")}</Text>
             </Pressable>
           </Pressable>
         </Pressable>
@@ -82,13 +86,13 @@ export function CalendarFiltersButton() {
 const styles = StyleSheet.create({
   button: {
     borderWidth: 1,
-    borderColor: "#208AEF",
+    borderColor: colors.primary,
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
   buttonText: {
-    color: "#208AEF",
+    color: colors.primary,
     fontSize: 13,
     fontWeight: "600",
   },
@@ -116,7 +120,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#555",
+    color: colors.inkSoft,
     marginTop: 12,
     marginBottom: 4,
   },
@@ -131,21 +135,21 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 4,
     borderWidth: 1.5,
-    borderColor: "#ccc",
+    borderColor: colors.line,
   },
   checkboxChecked: {
-    backgroundColor: "#208AEF",
-    borderColor: "#208AEF",
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   rowText: {
     fontSize: 14,
   },
   emptyText: {
-    color: "#999",
+    color: colors.muted,
     fontSize: 13,
   },
   doneButton: {
-    backgroundColor: "#208AEF",
+    backgroundColor: colors.primary,
     borderRadius: 8,
     padding: 12,
     alignItems: "center",

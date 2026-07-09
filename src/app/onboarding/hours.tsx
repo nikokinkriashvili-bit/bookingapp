@@ -8,21 +8,15 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { colors } from "@/lib/theme";
 import { WEEKDAYS, type Weekday } from "@/lib/businessTypes";
 import { useOnboarding } from "@/providers/OnboardingProvider";
-
-const DAY_LABELS: Record<Weekday, string> = {
-  mon: "Monday",
-  tue: "Tuesday",
-  wed: "Wednesday",
-  thu: "Thursday",
-  fri: "Friday",
-  sat: "Saturday",
-  sun: "Sunday",
-};
+import { useT } from "@/providers/LanguageProvider";
+import type { StringKey } from "@/lib/i18n";
 
 export default function HoursStep() {
   const { workingHours, setWorkingHours } = useOnboarding();
+  const t = useT();
 
   if (!workingHours) {
     // Shouldn't happen in practice — business-type step always sets this
@@ -48,14 +42,14 @@ export default function HoursStep() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Working hours</Text>
+      <Text style={styles.title}>{t("onboarding.hoursTitle")}</Text>
 
       {WEEKDAYS.map((day) => {
         const hours = workingHours[day];
         return (
           <View key={day} style={styles.dayRow}>
             <View style={styles.dayHeader}>
-              <Text style={styles.dayLabel}>{DAY_LABELS[day]}</Text>
+              <Text style={styles.dayLabel}>{t(`weekday.${day}` as StringKey)}</Text>
               <Switch value={!!hours} onValueChange={(v) => toggleDay(day, v)} />
             </View>
             {hours ? (
@@ -66,7 +60,7 @@ export default function HoursStep() {
                   onChangeText={(v) => updateTime(day, "open", v)}
                   placeholder="09:00"
                 />
-                <Text style={styles.timeSeparator}>to</Text>
+                <Text style={styles.timeSeparator}>{t("common.to")}</Text>
                 <TextInput
                   style={styles.timeInput}
                   value={hours.close}
@@ -75,7 +69,7 @@ export default function HoursStep() {
                 />
               </View>
             ) : (
-              <Text style={styles.closedText}>Closed</Text>
+              <Text style={styles.closedText}>{t("common.closed")}</Text>
             )}
           </View>
         );
@@ -85,7 +79,7 @@ export default function HoursStep() {
         style={styles.button}
         onPress={() => router.push("/onboarding/services")}
       >
-        <Text style={styles.buttonText}>Continue</Text>
+        <Text style={styles.buttonText}>{t("onboarding.continue")}</Text>
       </Pressable>
     </ScrollView>
   );
@@ -104,7 +98,7 @@ const styles = StyleSheet.create({
   },
   dayRow: {
     borderWidth: 1,
-    borderColor: "#eee",
+    borderColor: colors.faintLine,
     borderRadius: 8,
     padding: 12,
     gap: 8,
@@ -125,7 +119,7 @@ const styles = StyleSheet.create({
   },
   timeInput: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: colors.line,
     borderRadius: 6,
     padding: 8,
     fontSize: 14,
@@ -133,13 +127,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   timeSeparator: {
-    color: "#888",
+    color: colors.muted,
   },
   closedText: {
-    color: "#999",
+    color: colors.muted,
   },
   button: {
-    backgroundColor: "#208AEF",
+    backgroundColor: colors.primary,
     borderRadius: 8,
     padding: 14,
     alignItems: "center",

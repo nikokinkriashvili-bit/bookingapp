@@ -14,7 +14,12 @@ Git is initialized and pushed to [github.com/nikokinkriashvili-bit/bookingapp](h
 - Month/day calendar with status+service filters and GEL period summaries (replaces the kanban whiteboard)
 - Order edit screen (`jobs/[id]/edit.tsx`), home dashboard stat balloons (`DashboardStats.tsx`)
 
-**Not built yet:** Vehicle & Customer CRM screens (TRD §5.4), bilingual UI (Georgian/English), WhatsApp integration, BOG payments. Migrations must be run manually in the Supabase SQL Editor — Claude has no DB access.
+- Vehicle & Customer CRM screens (TRD §5.4): `vehicles/` and `customers/` list + profile screens, editable details, service history, "new order for this vehicle" fast path
+- Bilingual UI: all screens render through `src/lib/i18n.ts` + `LanguageProvider` (ქარ/EN toggle on home, Georgian default, persisted). **Gap:** business-type/service-template names in the Supabase catalog tables are English-only — localizing them is a pending data migration.
+- Design system: tokens in `src/lib/theme.ts`, documented in DESIGN.md
+- Integration seams: `src/lib/integrations.ts` has inert `sendWhatsAppMessage` / `generateBogPaymentLink` placeholders with `TODO(TRD §…)` markers, called from job creation and status changes — these become real at roadmap steps 9–10.
+
+**Not built yet:** WhatsApp integration, BOG payments, post-onboarding business settings (edit hours/services). Migrations must be run manually in the Supabase SQL Editor — Claude has no DB access.
 
 **Testing surfaces:** localhost web preview + Vercel. Phone testing via Expo Go has been blocked by firewall/tunnel issues on this machine — design mobile-first and verify at ~375px width in the web preview.
 
@@ -31,7 +36,7 @@ See [AGENTS.md](AGENTS.md) for the Expo SDK version note (docs.expo.dev/versions
 
 When building or reworking UI, apply the `frontend-design` skill's principles (if not registered in the session, its SKILL.md is readable at `~/.claude/plugins/marketplaces/claude-plugins-official/plugins/frontend-design/skills/frontend-design/SKILL.md`): deliberate palette/type choices grounded in the subject, one signature element, restraint elsewhere, copy written from the user's side of the screen. Goal (confirmed with Niko): one consistent, considered visual language across the whole app — new screens follow it and already-built screens (onboarding, intake, calendar, dashboard) get brought in line, not a patchwork redesigned later.
 
-The `impeccable` design skill payload lives at `.claude/skills/impeccable/` (gitignored; reinstall via `npx impeccable install`). A `DESIGN.md` (visual system: colors, typography, components) hasn't been generated yet — produce one once the design system settles.
+[DESIGN.md](DESIGN.md) documents the visual system: tokens live in `src/lib/theme.ts` (brand blue derived from the Georgian plate band; the `PlateChip` component is the signature element) — screens reference tokens, never hardcoded palette hex. The `impeccable` design skill payload lives at `.claude/skills/impeccable/` (gitignored; reinstall via `npx impeccable install`).
 
 ## What this project is
 

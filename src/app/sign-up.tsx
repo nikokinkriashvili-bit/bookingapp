@@ -8,10 +8,13 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { colors } from "@/lib/theme";
 import { useAuth } from "@/providers/AuthProvider";
+import { useT } from "@/providers/LanguageProvider";
 
 export default function SignUp() {
   const { session, signUp } = useAuth();
+  const t = useT();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -31,17 +34,17 @@ export default function SignUp() {
     if (result.error) {
       setError(result.error);
     } else if (result.needsEmailConfirmation) {
-      setMessage("Check your email to confirm your account, then log in.");
+      setMessage(t("auth.checkEmail"));
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Sign up</Text>
+      <Text style={styles.title}>{t("auth.signUp")}</Text>
 
       <TextInput
         style={styles.input}
-        placeholder="Email"
+        placeholder={t("auth.email")}
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
@@ -49,7 +52,7 @@ export default function SignUp() {
       />
       <TextInput
         style={styles.input}
-        placeholder="Password"
+        placeholder={t("auth.password")}
         secureTextEntry
         value={password}
         onChangeText={setPassword}
@@ -62,12 +65,12 @@ export default function SignUp() {
         {submitting ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Sign up</Text>
+          <Text style={styles.buttonText}>{t("auth.signUp")}</Text>
         )}
       </Pressable>
 
       <Link href="/login" style={styles.link}>
-        Already have an account? Log in
+        {t("auth.haveAccount")}
       </Link>
     </View>
   );
@@ -88,13 +91,13 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: colors.line,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
   },
   button: {
-    backgroundColor: "#208AEF",
+    backgroundColor: colors.primary,
     borderRadius: 8,
     padding: 14,
     alignItems: "center",
@@ -106,14 +109,14 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   error: {
-    color: "#d33",
+    color: colors.danger,
   },
   message: {
-    color: "#207a3f",
+    color: colors.success,
   },
   link: {
     textAlign: "center",
-    color: "#208AEF",
+    color: colors.primary,
     marginTop: 12,
   },
 });
