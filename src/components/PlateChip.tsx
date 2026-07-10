@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors } from "@/lib/theme";
+import { useMemo } from "react";
+import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 
 // Renders a plate number styled after a Georgian license plate: blue EU-style
 // band with "GE" on the left, bold spaced lettering on a white field. Used as
@@ -11,6 +12,8 @@ export function PlateChip({
   plate: string;
   size?: "small" | "large";
 }) {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const large = size === "large";
   return (
     <View style={[styles.chip, large && styles.chipLarge]}>
@@ -24,7 +27,8 @@ export function PlateChip({
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   chip: {
     flexDirection: "row",
     alignItems: "stretch",
@@ -55,6 +59,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   bandTextLarge: {
+    color: colors.ink,
     fontSize: 11,
   },
   plate: {
@@ -66,9 +71,11 @@ const styles = StyleSheet.create({
     color: "#1a1a1a",
   },
   plateLarge: {
+    color: colors.ink,
     paddingHorizontal: 14,
     paddingVertical: 8,
     fontSize: 24,
     letterSpacing: 3,
   },
 });
+}

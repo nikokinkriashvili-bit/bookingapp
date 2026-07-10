@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Redirect, Link } from "expo-router";
 import {
   ActivityIndicator,
@@ -8,11 +8,13 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { colors } from "@/lib/theme";
+import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLanguage } from "@/providers/LanguageProvider";
 
 export default function Login() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { session, signIn } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const [email, setEmail] = useState("");
@@ -85,7 +87,8 @@ export default function Login() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
@@ -93,12 +96,14 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   title: {
+    color: colors.ink,
     fontSize: 24,
     fontWeight: "600",
     marginBottom: 12,
     textAlign: "center",
   },
   input: {
+    color: colors.ink,
     borderWidth: 1,
     borderColor: colors.line,
     borderRadius: 8,
@@ -152,3 +157,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+}

@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { colors } from "@/lib/theme";
-import { STATUS_COLORS, STATUS_ORDER, statusLabelKey } from "@/lib/jobStatus";
+import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
+import { STATUS_ORDER, statusLabelKey, statusTone } from "@/lib/jobStatus";
 import { useCalendarFilters } from "@/providers/CalendarFilterProvider";
 import { useT } from "@/providers/LanguageProvider";
 
 export function CalendarFiltersButton() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const t = useT();
   const [open, setOpen] = useState(false);
   const {
@@ -53,7 +55,7 @@ export function CalendarFiltersButton() {
                     <View
                       style={[
                         styles.checkbox,
-                        checked && { backgroundColor: STATUS_COLORS[status] },
+                        checked && { backgroundColor: statusTone(colors, status).border },
                       ]}
                     />
                     <Text style={styles.rowText}>{t(statusLabelKey(status))}</Text>
@@ -113,7 +115,8 @@ export function CalendarFiltersButton() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   button: {
     borderWidth: 1,
     borderColor: colors.primary,
@@ -133,13 +136,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   content: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 20,
     width: 300,
     maxHeight: "70%",
   },
   title: {
+    color: colors.ink,
     fontSize: 18,
     fontWeight: "700",
     marginBottom: 12,
@@ -172,6 +176,7 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   rowText: {
+    color: colors.ink,
     fontSize: 14,
   },
   emptyText: {
@@ -191,3 +196,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 });
+}

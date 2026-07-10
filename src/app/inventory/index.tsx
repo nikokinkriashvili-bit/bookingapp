@@ -9,7 +9,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { colors } from "@/lib/theme";
+import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
@@ -19,7 +19,7 @@ import {
   stockStatusLabelKey,
   suggestedOrderQty,
   leadTimeDays,
-  STOCK_STATUS_COLORS,
+  stockStatusTone,
   type StockStatus,
 } from "@/lib/inventory";
 import { draftPurchaseOrder } from "@/lib/purchaseOrders";
@@ -46,6 +46,8 @@ const STATUS_SEVERITY: Record<StockStatus, number> = {
 };
 
 export default function InventoryDashboard() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { business } = useBusiness();
   const t = useT();
 
@@ -158,7 +160,7 @@ export default function InventoryDashboard() {
         }
         renderItem={({ item }) => (
           <Pressable
-            style={[styles.card, { borderLeftColor: STOCK_STATUS_COLORS[item.status] }]}
+            style={[styles.card, { borderLeftColor: stockStatusTone(colors, item.status).border }]}
             onPress={() => router.push(`/inventory/product?id=${item.product.id}`)}
           >
             <View style={styles.cardTop}>
@@ -171,10 +173,15 @@ export default function InventoryDashboard() {
               <View
                 style={[
                   styles.statusBadge,
-                  { backgroundColor: STOCK_STATUS_COLORS[item.status] },
+                  { backgroundColor: stockStatusTone(colors, item.status).bg },
                 ]}
               >
-                <Text style={styles.statusBadgeText}>
+                <Text
+                  style={[
+                    styles.statusBadgeText,
+                    { color: stockStatusTone(colors, item.status).text },
+                  ]}
+                >
                   {t(stockStatusLabelKey(item.status))}
                 </Text>
               </View>
@@ -242,7 +249,8 @@ export default function InventoryDashboard() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   centered: {
     flex: 1,
     alignItems: "center",
@@ -264,6 +272,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   title: {
+    color: colors.ink,
     fontSize: 24,
     fontWeight: "600",
   },
@@ -283,6 +292,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   search: {
+    color: colors.ink,
     borderWidth: 1,
     borderColor: colors.line,
     borderRadius: 8,
@@ -312,6 +322,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardName: {
+    color: colors.ink,
     fontSize: 15,
     fontWeight: "700",
   },
@@ -326,7 +337,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   statusBadgeText: {
-    color: "#fff",
     fontSize: 11,
     fontWeight: "700",
   },
@@ -342,6 +352,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   statValue: {
+    color: colors.ink,
     fontSize: 14,
     fontWeight: "700",
   },
@@ -371,3 +382,4 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
+}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, router, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
@@ -9,14 +9,14 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { colors } from "@/lib/theme";
+import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
 import { PlateChip } from "@/components/PlateChip";
 import { formatGel, type StringKey } from "@/lib/i18n";
 import { toDateKey } from "@/lib/calendarDate";
-import { STATUS_COLORS, type JobStatus } from "@/lib/jobStatus";
+import { statusTone, type JobStatus } from "@/lib/jobStatus";
 
 type Vehicle = {
   id: string;
@@ -39,6 +39,8 @@ type Job = {
 };
 
 export default function VehicleProfile() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { id } = useLocalSearchParams<{ id: string }>();
   const { business } = useBusiness();
   const t = useT();
@@ -248,7 +250,7 @@ export default function VehicleProfile() {
           jobs.map((job) => (
             <Pressable
               key={job.id}
-              style={[styles.jobCard, { borderLeftColor: STATUS_COLORS[job.status] }]}
+              style={[styles.jobCard, { borderLeftColor: statusTone(colors, job.status).border }]}
               onPress={() => router.push(`/jobs/${job.id}/edit`)}
             >
               <View style={styles.jobCardTop}>
@@ -263,7 +265,7 @@ export default function VehicleProfile() {
                   .filter(Boolean)
                   .join(" · ") || "—"}
               </Text>
-              <Text style={[styles.jobStatus, { color: STATUS_COLORS[job.status] }]}>
+              <Text style={[styles.jobStatus, { color: statusTone(colors, job.status).border }]}>
                 {t(`status.${job.status}` as StringKey)}
               </Text>
             </Pressable>
@@ -281,7 +283,8 @@ export default function VehicleProfile() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   centered: {
     flex: 1,
     alignItems: "center",
@@ -305,9 +308,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
   },
   statValue: {
+    color: colors.ink,
     fontSize: 18,
     fontWeight: "700",
   },
@@ -348,6 +352,7 @@ const styles = StyleSheet.create({
     color: colors.muted,
   },
   detailValue: {
+    color: colors.ink,
     fontSize: 14,
     fontWeight: "600",
   },
@@ -355,6 +360,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   input: {
+    color: colors.ink,
     borderWidth: 1,
     borderColor: colors.line,
     borderRadius: 8,
@@ -399,9 +405,10 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     borderRadius: 10,
     padding: 12,
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
   },
   linkRowText: {
+    color: colors.ink,
     fontSize: 15,
     fontWeight: "600",
   },
@@ -415,7 +422,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderRadius: 10,
     padding: 12,
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
     gap: 4,
   },
   jobCardTop: {
@@ -423,10 +430,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   jobDate: {
+    color: colors.ink,
     fontSize: 14,
     fontWeight: "600",
   },
   jobPrice: {
+    color: colors.ink,
     fontSize: 14,
     fontWeight: "700",
   },
@@ -456,3 +465,4 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
 });
+}

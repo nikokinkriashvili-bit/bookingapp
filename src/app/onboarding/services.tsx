@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Redirect, router } from "expo-router";
 import {
   ActivityIndicator,
@@ -9,7 +9,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { colors } from "@/lib/theme";
+import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/providers/AuthProvider";
 import { useBusiness } from "@/providers/BusinessProvider";
@@ -17,6 +17,8 @@ import { useOnboarding } from "@/providers/OnboardingProvider";
 import { useT } from "@/providers/LanguageProvider";
 
 export default function ServicesStep() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const t = useT();
   const { session } = useAuth();
   const { refetch } = useBusiness();
@@ -152,12 +154,14 @@ export default function ServicesStep() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   container: {
     padding: 24,
     gap: 12,
   },
   title: {
+    color: colors.ink,
     fontSize: 24,
     fontWeight: "600",
     marginBottom: 8,
@@ -169,6 +173,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   input: {
+    color: colors.ink,
     borderWidth: 1,
     borderColor: colors.line,
     borderRadius: 8,
@@ -215,3 +220,4 @@ const styles = StyleSheet.create({
     color: colors.danger,
   },
 });
+}

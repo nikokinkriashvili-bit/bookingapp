@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, router, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { colors } from "@/lib/theme";
+import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useLanguage } from "@/providers/LanguageProvider";
@@ -18,9 +18,9 @@ import { CalendarFiltersButton } from "@/components/CalendarFiltersButton";
 import { useCalendarFilters } from "@/providers/CalendarFilterProvider";
 import type { Weekday } from "@/lib/businessTypes";
 import {
-  STATUS_COLORS,
   STATUS_ORDER,
   statusLabelKey,
+  statusTone,
   summarizeJobs,
   type JobStatus,
 } from "@/lib/jobStatus";
@@ -58,6 +58,8 @@ function formatRange(job: JobRow, locale: string): string {
 }
 
 export default function CalendarDay() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { date } = useLocalSearchParams<{ date: string }>();
   const { business } = useBusiness();
   const { language, t } = useLanguage();
@@ -192,7 +194,7 @@ export default function CalendarDay() {
             visibleJobs.map((job) => (
               <Pressable
                 key={job.id}
-                style={[styles.card, { borderLeftColor: STATUS_COLORS[job.status] }]}
+                style={[styles.card, { borderLeftColor: statusTone(colors, job.status).border }]}
                 onPress={() => setSelectedJob(job)}
               >
                 <Text style={styles.cardPlate}>
@@ -238,7 +240,7 @@ export default function CalendarDay() {
                 onPress={() => selectedJob && changeStatus(selectedJob.id, status)}
               >
                 <View
-                  style={[styles.modalDot, { backgroundColor: STATUS_COLORS[status] }]}
+                  style={[styles.modalDot, { backgroundColor: statusTone(colors, status).border }]}
                 />
                 <Text style={styles.modalOptionText}>{t(statusLabelKey(status))}</Text>
               </Pressable>
@@ -250,7 +252,8 @@ export default function CalendarDay() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -286,6 +289,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dateText: {
+    color: colors.ink,
     fontSize: 16,
     fontWeight: "700",
   },
@@ -331,6 +335,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   cardPlate: {
+    color: colors.ink,
     fontSize: 16,
     fontWeight: "700",
   },
@@ -350,13 +355,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   modalContent: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 20,
     width: 280,
     gap: 4,
   },
   modalTitle: {
+    color: colors.ink,
     fontSize: 16,
     fontWeight: "700",
     marginBottom: 4,
@@ -385,6 +391,8 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   modalOptionText: {
+    color: colors.ink,
     fontSize: 15,
   },
 });
+}

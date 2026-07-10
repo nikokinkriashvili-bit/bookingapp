@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import {
   ActivityIndicator,
@@ -10,7 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { colors } from "@/lib/theme";
+import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
@@ -33,6 +33,8 @@ type StaffRow = {
 };
 
 export default function Settings() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const t = useT();
   const { business, role, refetch } = useBusiness();
 
@@ -392,7 +394,8 @@ export default function Settings() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   centered: {
     flex: 1,
     alignItems: "center",
@@ -403,6 +406,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   title: {
+    color: colors.ink,
     fontSize: 24,
     fontWeight: "600",
     marginBottom: 8,
@@ -420,6 +424,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   input: {
+    color: colors.ink,
     borderWidth: 1,
     borderColor: colors.line,
     borderRadius: 8,
@@ -440,6 +445,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dayLabel: {
+    color: colors.ink,
     fontSize: 16,
     fontWeight: "500",
   },
@@ -449,6 +455,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   timeInput: {
+    color: colors.ink,
     borderWidth: 1,
     borderColor: colors.line,
     borderRadius: 6,
@@ -524,6 +531,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   staffName: {
+    color: colors.ink,
     fontSize: 15,
     fontWeight: "700",
   },
@@ -532,6 +540,7 @@ const styles = StyleSheet.create({
     color: colors.inkSoft,
   },
   staffStatus: {
+    color: colors.ink,
     fontSize: 12,
     fontWeight: "600",
   },
@@ -572,3 +581,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Redirect, Link } from "expo-router";
 import {
   ActivityIndicator,
@@ -8,11 +8,13 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { colors } from "@/lib/theme";
+import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import { useT } from "@/providers/LanguageProvider";
 
 export default function SignUp() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { session, signUp } = useAuth();
   const t = useT();
   const [email, setEmail] = useState("");
@@ -76,7 +78,8 @@ export default function SignUp() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
@@ -84,12 +87,14 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   title: {
+    color: colors.ink,
     fontSize: 24,
     fontWeight: "600",
     marginBottom: 12,
     textAlign: "center",
   },
   input: {
+    color: colors.ink,
     borderWidth: 1,
     borderColor: colors.line,
     borderRadius: 8,
@@ -120,3 +125,4 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
 });
+}

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { router, useFocusEffect } from "expo-router";
 import {
   ActivityIndicator,
@@ -8,11 +8,11 @@ import {
   Text,
   View,
 } from "react-native";
-import { colors } from "@/lib/theme";
+import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
-import { PO_STATUS_COLORS, poStatusLabelKey, type PoStatus } from "@/lib/inventory";
+import { poStatusLabelKey, poStatusTone, type PoStatus } from "@/lib/inventory";
 import { toDateKey } from "@/lib/calendarDate";
 
 type PoRow = {
@@ -26,6 +26,8 @@ type PoRow = {
 };
 
 export default function PurchaseOrders() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const t = useT();
   const { business } = useBusiness();
   const [orders, setOrders] = useState<PoRow[] | null>(null);
@@ -67,7 +69,7 @@ export default function PurchaseOrders() {
           );
           return (
             <Pressable
-              style={[styles.card, { borderLeftColor: PO_STATUS_COLORS[item.status] }]}
+              style={[styles.card, { borderLeftColor: poStatusTone(colors, item.status).border }]}
               onPress={() => router.push(`/inventory/orders/${item.id}`)}
             >
               <View style={styles.cardTop}>
@@ -75,10 +77,15 @@ export default function PurchaseOrders() {
                 <View
                   style={[
                     styles.statusBadge,
-                    { backgroundColor: PO_STATUS_COLORS[item.status] },
+                    { backgroundColor: poStatusTone(colors, item.status).bg },
                   ]}
                 >
-                  <Text style={styles.statusBadgeText}>
+                  <Text
+                    style={[
+                      styles.statusBadgeText,
+                      { color: poStatusTone(colors, item.status).text },
+                    ]}
+                  >
                     {t(poStatusLabelKey(item.status))}
                   </Text>
                 </View>
@@ -101,7 +108,8 @@ export default function PurchaseOrders() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   centered: {
     flex: 1,
     alignItems: "center",
@@ -114,6 +122,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   title: {
+    color: colors.ink,
     fontSize: 24,
     fontWeight: "600",
     textAlign: "center",
@@ -138,6 +147,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cardName: {
+    color: colors.ink,
     fontSize: 15,
     fontWeight: "700",
     flex: 1,
@@ -148,7 +158,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   statusBadgeText: {
-    color: "#fff",
     fontSize: 11,
     fontWeight: "700",
   },
@@ -163,3 +172,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+}

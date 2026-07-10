@@ -7,13 +7,16 @@ import {
   Text,
   View,
 } from "react-native";
-import { colors } from "@/lib/theme";
+import { useMemo } from "react";
+import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useLanguage } from "@/providers/LanguageProvider";
 import { DashboardStats } from "@/components/DashboardStats";
 
 export default function Index() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { session, isLoading: isAuthLoading, signOut } = useAuth();
   const { business, role, isLoading: isBusinessLoading } = useBusiness();
   const { language, setLanguage, t } = useLanguage();
@@ -97,7 +100,8 @@ export default function Index() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   centered: {
     flex: 1,
     alignItems: "center",
@@ -114,6 +118,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   businessName: {
+    color: colors.ink,
     fontSize: 20,
     fontWeight: "700",
   },
@@ -157,7 +162,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   outlineButton: {
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
     color: colors.primary,
     borderWidth: 1,
     borderColor: colors.primary,
@@ -182,3 +187,4 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
 });
+}

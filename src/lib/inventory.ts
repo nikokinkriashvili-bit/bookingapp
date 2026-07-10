@@ -1,7 +1,7 @@
 // Reorder-point math (BRD §6.2):
 // Reorder Point = (Average Weekly Sales ÷ 7) × Lead Time in Days + Safety Stock
 
-import { colors } from "@/lib/theme";
+import type { ThemeColors, StatusTone } from "@/lib/theme";
 import type { StringKey } from "@/lib/i18n";
 
 export type StockStatus = "ok" | "order_soon" | "order_now" | "critical";
@@ -30,12 +30,16 @@ export function stockStatus(p: ProductStockInput): StockStatus {
   return "ok";
 }
 
-export const STOCK_STATUS_COLORS: Record<StockStatus, string> = {
-  ok: colors.success,
-  order_soon: "#E8930C",
-  order_now: colors.danger,
-  critical: "#8E1600",
+const STOCK_TONE_KEY: Record<StockStatus, keyof ThemeColors["status"]> = {
+  ok: "success",
+  order_soon: "warning",
+  order_now: "dangerSoft",
+  critical: "dangerStrong",
 };
+
+export function stockStatusTone(colors: ThemeColors, status: StockStatus): StatusTone {
+  return colors.status[STOCK_TONE_KEY[status]];
+}
 
 export function stockStatusLabelKey(status: StockStatus) {
   return `inv.status.${status}` as StringKey;
@@ -51,12 +55,16 @@ export function suggestedOrderQty(p: ProductStockInput, moq: number | null): num
 
 export type PoStatus = "draft" | "sent" | "received" | "cancelled";
 
-export const PO_STATUS_COLORS: Record<PoStatus, string> = {
-  draft: "#8A9099",
-  sent: "#E8930C",
-  received: colors.success,
-  cancelled: "#B9BEC5",
+const PO_TONE_KEY: Record<PoStatus, keyof ThemeColors["status"]> = {
+  draft: "neutral",
+  sent: "warning",
+  received: "success",
+  cancelled: "neutral",
 };
+
+export function poStatusTone(colors: ThemeColors, status: PoStatus): StatusTone {
+  return colors.status[PO_TONE_KEY[status]];
+}
 
 export function poStatusLabelKey(status: PoStatus) {
   return `po.status.${status}` as StringKey;

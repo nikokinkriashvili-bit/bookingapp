@@ -8,13 +8,16 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { colors } from "@/lib/theme";
+import { useMemo } from "react";
+import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { WEEKDAYS, type Weekday } from "@/lib/businessTypes";
 import { useOnboarding } from "@/providers/OnboardingProvider";
 import { useT } from "@/providers/LanguageProvider";
 import type { StringKey } from "@/lib/i18n";
 
 export default function HoursStep() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { workingHours, setWorkingHours } = useOnboarding();
   const t = useT();
 
@@ -85,12 +88,14 @@ export default function HoursStep() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   container: {
     padding: 24,
     gap: 12,
   },
   title: {
+    color: colors.ink,
     fontSize: 24,
     fontWeight: "600",
     marginBottom: 8,
@@ -109,6 +114,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dayLabel: {
+    color: colors.ink,
     fontSize: 16,
     fontWeight: "500",
   },
@@ -118,6 +124,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   timeInput: {
+    color: colors.ink,
     borderWidth: 1,
     borderColor: colors.line,
     borderRadius: 6,
@@ -145,3 +152,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+}

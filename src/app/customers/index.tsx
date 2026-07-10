@@ -9,7 +9,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { colors } from "@/lib/theme";
+import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
@@ -21,6 +21,8 @@ type CustomerRow = {
 };
 
 export default function Customers() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { business } = useBusiness();
   const t = useT();
 
@@ -85,7 +87,8 @@ export default function Customers() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   centered: {
     flex: 1,
     alignItems: "center",
@@ -98,11 +101,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   title: {
+    color: colors.ink,
     fontSize: 24,
     fontWeight: "600",
     textAlign: "center",
   },
   search: {
+    color: colors.ink,
     borderWidth: 1,
     borderColor: colors.line,
     borderRadius: 8,
@@ -121,9 +126,10 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     borderRadius: 10,
     padding: 14,
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
   },
   rowName: {
+    color: colors.ink,
     fontSize: 15,
     fontWeight: "600",
   },
@@ -138,3 +144,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+}

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
@@ -10,11 +10,11 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { colors } from "@/lib/theme";
+import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
-import { PO_STATUS_COLORS, poStatusLabelKey, type PoStatus } from "@/lib/inventory";
+import { poStatusLabelKey, poStatusTone, type PoStatus } from "@/lib/inventory";
 import { receivePurchaseOrder } from "@/lib/purchaseOrders";
 import { toDateKey } from "@/lib/calendarDate";
 
@@ -43,6 +43,8 @@ type ProductOption = {
 };
 
 export default function PurchaseOrderDetail() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const t = useT();
   const { business } = useBusiness();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -219,9 +221,11 @@ export default function PurchaseOrderDetail() {
       <View style={styles.headerRow}>
         <Text style={styles.title}>{po.suppliers?.name ?? "—"}</Text>
         <View
-          style={[styles.statusBadge, { backgroundColor: PO_STATUS_COLORS[po.status] }]}
+          style={[styles.statusBadge, { backgroundColor: poStatusTone(colors, po.status).bg }]}
         >
-          <Text style={styles.statusBadgeText}>{t(poStatusLabelKey(po.status))}</Text>
+          <Text style={[styles.statusBadgeText, { color: poStatusTone(colors, po.status).text }]}>
+            {t(poStatusLabelKey(po.status))}
+          </Text>
         </View>
       </View>
       <Text style={styles.subtitle}>{toDateKey(new Date(po.created_at))}</Text>
@@ -385,7 +389,8 @@ export default function PurchaseOrderDetail() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   centered: {
     flex: 1,
     alignItems: "center",
@@ -406,6 +411,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
+    color: colors.ink,
     fontSize: 22,
     fontWeight: "700",
     flex: 1,
@@ -420,7 +426,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   statusBadgeText: {
-    color: "#fff",
     fontSize: 11,
     fontWeight: "700",
   },
@@ -455,6 +460,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   itemName: {
+    color: colors.ink,
     fontSize: 15,
     fontWeight: "700",
     flex: 1,
@@ -476,6 +482,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   input: {
+    color: colors.ink,
     borderWidth: 1,
     borderColor: colors.line,
     borderRadius: 8,
@@ -498,6 +505,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   totalText: {
+    color: colors.ink,
     fontSize: 15,
     fontWeight: "700",
     textAlign: "right",
@@ -558,6 +566,7 @@ const styles = StyleSheet.create({
     maxHeight: "70%",
   },
   modalTitle: {
+    color: colors.ink,
     fontSize: 16,
     fontWeight: "700",
     marginBottom: 8,
@@ -571,6 +580,8 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.faintLine,
   },
   modalOptionText: {
+    color: colors.ink,
     fontSize: 14,
   },
 });
+}

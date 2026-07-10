@@ -9,7 +9,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { colors } from "@/lib/theme";
+import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
@@ -24,6 +24,8 @@ type VehicleRow = {
 };
 
 export default function Vehicles() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { business } = useBusiness();
   const t = useT();
 
@@ -116,7 +118,8 @@ export default function Vehicles() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   centered: {
     flex: 1,
     alignItems: "center",
@@ -129,11 +132,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   title: {
+    color: colors.ink,
     fontSize: 24,
     fontWeight: "600",
     textAlign: "center",
   },
   search: {
+    color: colors.ink,
     borderWidth: 1,
     borderColor: colors.line,
     borderRadius: 8,
@@ -153,13 +158,14 @@ const styles = StyleSheet.create({
     borderColor: colors.line,
     borderRadius: 10,
     padding: 12,
-    backgroundColor: "#fff",
+    backgroundColor: colors.surface,
   },
   rowDetails: {
     flex: 1,
     gap: 2,
   },
   rowMakeModel: {
+    color: colors.ink,
     fontSize: 15,
     fontWeight: "600",
   },
@@ -174,3 +180,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+}

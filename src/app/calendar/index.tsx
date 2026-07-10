@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, router } from "expo-router";
 import {
   ActivityIndicator,
@@ -8,14 +8,14 @@ import {
   Text,
   View,
 } from "react-native";
-import { colors } from "@/lib/theme";
+import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useLanguage } from "@/providers/LanguageProvider";
 import { PeriodSummary } from "@/components/PeriodSummary";
 import { CalendarFiltersButton } from "@/components/CalendarFiltersButton";
 import { useCalendarFilters } from "@/providers/CalendarFilterProvider";
-import { STATUS_COLORS, summarizeJobs, type JobStatus } from "@/lib/jobStatus";
+import { statusTone, summarizeJobs, type JobStatus } from "@/lib/jobStatus";
 import { localeFor, type StringKey } from "@/lib/i18n";
 import { addDays, addMonths, startOfMonth, toDateKey } from "@/lib/calendarDate";
 
@@ -37,6 +37,8 @@ function mondayOnOrBefore(date: Date): Date {
 }
 
 export default function CalendarMonth() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { business } = useBusiness();
   const { language, t } = useLanguage();
   const { isJobVisible } = useCalendarFilters();
@@ -158,19 +160,25 @@ export default function CalendarMonth() {
                   <Text style={[styles.cellDay, !isCurrentMonth && styles.cellDayMuted]}>
                     {date.getDate()}
                   </Text>
-                  {dayJobs.slice(0, MAX_CHIPS_PER_CELL).map((job, i) => (
+                  {dayJobs.slice(0, MAX_CHIPS_PER_CELL).map((job, i) => {
+                    const tone = statusTone(colors, job.status);
+                    return (
                     <View
                       key={i}
-                      style={[styles.chip, { backgroundColor: STATUS_COLORS[job.status] }]}
+                      style={[styles.chip, { backgroundColor: tone.bg }]}
                     >
-                      <Text style={styles.chipText} numberOfLines={1}>
+                      <Text
+                        style={[styles.chipText, { color: tone.text }]}
+                        numberOfLines={1}
+                      >
                         {[job.vehicles?.make, job.vehicles?.model]
                           .filter(Boolean)
                           .join(" ") || t("calendar.vehicleFallback")}
                         {job.price_total ? ` · ${job.price_total}` : ""}
                       </Text>
                     </View>
-                  ))}
+                  );
+                  })}
                   {dayJobs.length > MAX_CHIPS_PER_CELL ? (
                     <Text style={styles.moreText}>
                       +{dayJobs.length - MAX_CHIPS_PER_CELL} {t("calendar.more")}
@@ -186,7 +194,8 @@ export default function CalendarMonth() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -214,6 +223,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   monthText: {
+    color: colors.ink,
     flex: 1,
     fontSize: 17,
     fontWeight: "700",
@@ -257,6 +267,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryFaint,
   },
   cellDay: {
+    color: colors.ink,
     fontSize: 12,
     fontWeight: "600",
   },
@@ -270,7 +281,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   chipText: {
-    color: "#fff",
     fontSize: 9,
     fontWeight: "600",
   },
@@ -280,3 +290,4 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
+}

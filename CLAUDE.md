@@ -16,7 +16,7 @@ Git is initialized and pushed to [github.com/nikokinkriashvili-bit/bookingapp](h
 
 - Vehicle & Customer CRM screens (TRD §5.4): `vehicles/` and `customers/` list + profile screens, editable details, service history, "new order for this vehicle" fast path
 - Bilingual UI: all screens render through `src/lib/i18n.ts` + `LanguageProvider` (ქარ/EN toggle on home, Georgian default, persisted). **Gap:** business-type/service-template names in the Supabase catalog tables are English-only — localizing them is a pending data migration.
-- Design system: tokens in `src/lib/theme.ts`, documented in DESIGN.md
+- Design system: tokens in `src/lib/theme.ts` (light + dark palettes), documented in DESIGN.md. Every screen resolves colors via `useThemeColors()` (`ThemeProvider`, follows the OS light/dark setting — no in-app toggle) instead of a static import; job/stock/PO status colors are tinted badges (`statusTone`/`stockStatusTone`/`poStatusTone` in `jobStatus.ts`/`inventory.ts`), never solid-fill-with-white-text. Per `BookingApp_UXUI_Guidance_v1.md`. **Remaining from that guidance doc:** visible field labels (currently placeholder-only on some forms) and bottom-tab primary navigation — not yet done.
 - Integration seams: `src/lib/integrations.ts` has inert `sendWhatsAppMessage` / `generateBogPaymentLink` placeholders with `TODO(TRD §…)` markers, called from job creation and status changes — these become real at roadmap steps 9–10.
 
 **Not built yet:** WhatsApp integration, BOG payments, post-onboarding business settings (edit hours/services). Migrations must be run manually in the Supabase SQL Editor — Claude has no DB access.

@@ -1,4 +1,4 @@
-import { colors } from "@/lib/theme";
+import type { ThemeColors, StatusTone } from "@/lib/theme";
 
 export type JobStatus =
   | "booked"
@@ -23,14 +23,21 @@ export function statusLabelKey(status: JobStatus) {
   return `status.${status}` as const;
 }
 
-export const STATUS_COLORS: Record<JobStatus, string> = {
-  booked: colors.primary,
-  in_progress: "#F5A623",
-  awaiting_collection: "#9B59B6",
-  complete: "#2ECC71",
-  paid: "#16A085",
-  cancelled: "#95A5A6",
+const STATUS_TONE_KEY: Record<JobStatus, keyof ThemeColors["status"]> = {
+  booked: "info",
+  in_progress: "warning",
+  awaiting_collection: "purple",
+  complete: "success",
+  paid: "teal",
+  cancelled: "neutral",
 };
+
+// Theme-aware status tone: { border, bg, text } — border/text for accents
+// (dots, left-borders), bg+text together for tinted badges. Never render a
+// status as a solid fill with white text (UX guidance §4).
+export function statusTone(colors: ThemeColors, status: JobStatus): StatusTone {
+  return colors.status[STATUS_TONE_KEY[status]];
+}
 
 const PENDING_STATUSES: JobStatus[] = ["booked", "in_progress", "awaiting_collection"];
 

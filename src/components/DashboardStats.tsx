@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { colors } from "@/lib/theme";
+import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
+import { statusTone } from "@/lib/jobStatus";
 import { formatGel } from "@/lib/i18n";
 import { addMonths, startOfMonth } from "@/lib/calendarDate";
 
@@ -17,6 +18,8 @@ type Stats = {
 const CURRENT_STATUSES = ["booked", "in_progress", "awaiting_collection"];
 
 export function DashboardStats() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const t = useT();
   const { business } = useBusiness();
   const [stats, setStats] = useState<Stats | null>(null);
@@ -82,23 +85,38 @@ export function DashboardStats() {
 
   if (!stats) return null;
 
+  const successTone = statusTone(colors, "complete");
+  const tealTone = statusTone(colors, "paid");
+  const warningTone = statusTone(colors, "in_progress");
+  const infoTone = statusTone(colors, "booked");
+
   return (
     <View style={styles.grid}>
-      <View style={[styles.balloon, { backgroundColor: "#2ECC71" }]}>
-        <Text style={styles.value}>{stats.carsServiced}</Text>
-        <Text style={styles.label}>{t("dash.carsServiced")}</Text>
+      <View style={[styles.balloon, { backgroundColor: successTone.bg }]}>
+        <Text style={[styles.value, { color: successTone.text }]}>{stats.carsServiced}</Text>
+        <Text style={[styles.label, { color: successTone.text }]}>
+          {t("dash.carsServiced")}
+        </Text>
       </View>
-      <View style={[styles.balloon, { backgroundColor: "#16A085" }]}>
-        <Text style={styles.value}>{formatGel(stats.revenue)}</Text>
-        <Text style={styles.label}>{t("dash.revenue")}</Text>
+      <View style={[styles.balloon, { backgroundColor: tealTone.bg }]}>
+        <Text style={[styles.value, { color: tealTone.text }]}>
+          {formatGel(stats.revenue)}
+        </Text>
+        <Text style={[styles.label, { color: tealTone.text }]}>{t("dash.revenue")}</Text>
       </View>
-      <View style={[styles.balloon, { backgroundColor: "#607D8B" }]}>
-        <Text style={styles.value}>{formatGel(stats.pendingPayments)}</Text>
-        <Text style={styles.label}>{t("dash.pendingPayments")}</Text>
+      <View style={[styles.balloon, { backgroundColor: warningTone.bg }]}>
+        <Text style={[styles.value, { color: warningTone.text }]}>
+          {formatGel(stats.pendingPayments)}
+        </Text>
+        <Text style={[styles.label, { color: warningTone.text }]}>
+          {t("dash.pendingPayments")}
+        </Text>
       </View>
-      <View style={[styles.balloon, { backgroundColor: colors.primary }]}>
-        <Text style={styles.value}>{stats.currentJobs}</Text>
-        <Text style={styles.label}>{t("dash.currentJobs")}</Text>
+      <View style={[styles.balloon, { backgroundColor: infoTone.bg }]}>
+        <Text style={[styles.value, { color: infoTone.text }]}>{stats.currentJobs}</Text>
+        <Text style={[styles.label, { color: infoTone.text }]}>
+          {t("dash.currentJobs")}
+        </Text>
       </View>
       <View style={[styles.balloon, styles.placeholder]}>
         <Text style={styles.placeholderValue}>{t("dash.comingSoon")}</Text>
@@ -112,7 +130,8 @@ export function DashboardStats() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -127,12 +146,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   value: {
-    color: "#fff",
+    color: colors.ink,
     fontSize: 18,
     fontWeight: "700",
   },
   label: {
-    color: "#fff",
+    color: colors.ink,
     fontSize: 11,
     marginTop: 4,
   },
@@ -151,3 +170,4 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 });
+}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
@@ -10,7 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { colors } from "@/lib/theme";
+import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
@@ -58,6 +58,8 @@ type ProductOption = {
 };
 
 export default function EditJob() {
+  const colors = useThemeColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const t = useT();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { business } = useBusiness();
@@ -489,7 +491,8 @@ export default function EditJob() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
   centered: {
     flex: 1,
     alignItems: "center",
@@ -500,6 +503,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   title: {
+    color: colors.ink,
     fontSize: 24,
     fontWeight: "600",
     marginBottom: 8,
@@ -523,6 +527,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   readOnlyPlate: {
+    color: colors.ink,
     fontSize: 20,
     fontWeight: "700",
     letterSpacing: 1,
@@ -532,6 +537,7 @@ const styles = StyleSheet.create({
     color: colors.inkSoft,
   },
   input: {
+    color: colors.ink,
     borderWidth: 1,
     borderColor: colors.line,
     borderRadius: 8,
@@ -549,6 +555,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryFaint,
   },
   optionText: {
+    color: colors.ink,
     fontSize: 15,
   },
   optionTextSelected: {
@@ -593,6 +600,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   consumedName: {
+    color: colors.ink,
     fontSize: 14,
     fontWeight: "600",
   },
@@ -620,6 +628,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   stepQty: {
+    color: colors.ink,
     fontSize: 15,
     fontWeight: "700",
     minWidth: 24,
@@ -653,6 +662,7 @@ const styles = StyleSheet.create({
     maxHeight: "70%",
   },
   modalTitle: {
+    color: colors.ink,
     fontSize: 16,
     fontWeight: "700",
     marginBottom: 8,
@@ -666,6 +676,8 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.faintLine,
   },
   modalOptionText: {
+    color: colors.ink,
     fontSize: 14,
   },
 });
+}
