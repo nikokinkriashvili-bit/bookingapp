@@ -272,6 +272,19 @@ const en = {
   "home.settings": "Settings",
   "settings.title": "Business settings",
   "settings.saved": "Saved.",
+
+  // Staff
+  "settings.staff": "Staff",
+  "staff.add": "+ Add staff member",
+  "staff.email": "Email",
+  "staff.active": "Active",
+  "staff.pending": "Invite pending",
+  "staff.hint":
+    "A staff member gets access when they sign up (or log in) with this email.",
+  "staff.errorRequired": "Enter a name and email.",
+  "filters.staffSection": "Staff",
+  "job.assignee": "Assigned to",
+  "job.unassigned": "Unassigned",
 };
 
 const ka: Record<StringKey, string> = {
@@ -510,6 +523,18 @@ const ka: Record<StringKey, string> = {
   "home.settings": "პარამეტრები",
   "settings.title": "ბიზნესის პარამეტრები",
   "settings.saved": "შენახულია.",
+
+  "settings.staff": "თანამშრომლები",
+  "staff.add": "+ თანამშრომლის დამატება",
+  "staff.email": "ელფოსტა",
+  "staff.active": "აქტიური",
+  "staff.pending": "მოწვევა ელოდება",
+  "staff.hint":
+    "თანამშრომელი წვდომას მიიღებს, როცა ამ ელფოსტით დარეგისტრირდება (ან შევა).",
+  "staff.errorRequired": "შეიყვანეთ სახელი და ელფოსტა.",
+  "filters.staffSection": "თანამშრომელი",
+  "job.assignee": "შემსრულებელი",
+  "job.unassigned": "დაუნიშნავი",
 };
 
 export type StringKey = keyof typeof en;

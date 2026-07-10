@@ -20,8 +20,11 @@ export type Business = {
   created_at: string;
 };
 
+export type BusinessRole = "owner" | "staff";
+
 type BusinessContextValue = {
   business: Business | null;
+  role: BusinessRole;
   isLoading: boolean;
   refetch: () => Promise<void>;
 };
@@ -41,17 +44,26 @@ export function BusinessProvider({ children }: PropsWithChildren) {
     }
 
     setIsLoading(true);
-    const { data, error } = await supabase
-      .from("businesses")
-      .select("*")
-      .eq("owner_id", session.user.id)
-      .maybeSingle();
+
+    // Attach any pending staff invitations matching this user's email before
+    // querying — RLS opens up once the staff row carries their user id.
+    // Ignore errors so owners on a pre-009 database are unaffected.
+    await supabase.rpc("claim_staff_membership").then(
+      () => undefined,
+      () => undefined
+    );
+
+    // RLS returns businesses the user owns or belongs to as staff.
+    const { data, error } = await supabase.from("businesses").select("*");
 
     if (error) {
       console.error("Failed to fetch business:", error.message);
       setBusiness(null);
     } else {
-      setBusiness(data as Business | null);
+      const businesses = (data ?? []) as Business[];
+      // Prefer a business they own if they somehow belong to several.
+      const owned = businesses.find((b) => b.owner_id === session.user.id);
+      setBusiness(owned ?? businesses[0] ?? null);
     }
     setIsLoading(false);
   }, [session]);
@@ -60,9 +72,14 @@ export function BusinessProvider({ children }: PropsWithChildren) {
     fetchBusiness();
   }, [fetchBusiness]);
 
+  const role: BusinessRole =
+    business && session && business.owner_id === session.user.id
+      ? "owner"
+      : "staff";
+
   return (
     <BusinessContext.Provider
-      value={{ business, isLoading, refetch: fetchBusiness }}
+      value={{ business, role, isLoading, refetch: fetchBusiness }}
     >
       {children}
     </BusinessContext.Provider>

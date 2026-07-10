@@ -35,8 +35,10 @@ type JobRow = {
   scheduled_end: string;
   price_total: number | null;
   service_ids: string[] | null;
+  assigned_staff_id: string | null;
   vehicles: { plate_number: string; make: string | null; model: string | null } | null;
   customers: { name: string } | null;
+  staff: { name: string } | null;
 };
 
 const JS_DAY_TO_WEEKDAY: Weekday[] = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
@@ -73,7 +75,7 @@ export default function CalendarDay() {
     const { data } = await supabase
       .from("jobs")
       .select(
-        "id, status, scheduled_slot, scheduled_end, price_total, service_ids, vehicles(plate_number, make, model), customers(name)"
+        "id, status, scheduled_slot, scheduled_end, price_total, service_ids, assigned_staff_id, vehicles(plate_number, make, model), customers(name), staff(name)"
       )
       .eq("business_id", business.id)
       .gte("scheduled_slot", dayStart.toISOString())
@@ -200,6 +202,9 @@ export default function CalendarDay() {
                 </Text>
                 <Text style={styles.cardDetail}>{job.customers?.name ?? "?"}</Text>
                 <Text style={styles.cardDetail}>{formatRange(job, locale)}</Text>
+                {job.staff ? (
+                  <Text style={styles.cardAssignee}>{job.staff.name}</Text>
+                ) : null}
                 {job.price_total ? (
                   <Text style={styles.cardDetail}>{formatGel(job.price_total)}</Text>
                 ) : null}
@@ -332,6 +337,11 @@ const styles = StyleSheet.create({
   cardDetail: {
     fontSize: 13,
     color: colors.inkSoft,
+  },
+  cardAssignee: {
+    fontSize: 12,
+    color: colors.primary,
+    fontWeight: "600",
   },
   modalBackdrop: {
     flex: 1,

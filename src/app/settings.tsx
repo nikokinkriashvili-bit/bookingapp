@@ -24,18 +24,43 @@ type ServiceEdit = {
   priceGel: string;
 };
 
+type StaffRow = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  user_id: string | null;
+};
+
 export default function Settings() {
   const t = useT();
-  const { business, refetch } = useBusiness();
+  const { business, role, refetch } = useBusiness();
 
   const [name, setName] = useState("");
   const [hours, setHours] = useState<WorkingHours | null>(null);
   const [services, setServices] = useState<ServiceEdit[]>([]);
   const [deletedServiceIds, setDeletedServiceIds] = useState<string[]>([]);
+  const [staffList, setStaffList] = useState<StaffRow[]>([]);
+  const [staffFormOpen, setStaffFormOpen] = useState(false);
+  const [staffName, setStaffName] = useState("");
+  const [staffEmail, setStaffEmail] = useState("");
+  const [staffPhone, setStaffPhone] = useState("");
+  const [staffError, setStaffError] = useState<string | null>(null);
+  const [staffSubmitting, setStaffSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const loadStaff = useCallback(() => {
+    if (!business) return;
+    supabase
+      .from("staff")
+      .select("id, name, email, phone, user_id")
+      .eq("business_id", business.id)
+      .order("name")
+      .then(({ data }) => setStaffList(data ?? []));
+  }, [business]);
 
   useFocusEffect(
     useCallback(() => {
@@ -44,6 +69,7 @@ export default function Settings() {
       setHours(business.working_hours);
       setDeletedServiceIds([]);
       setSaved(false);
+      loadStaff();
       supabase
         .from("services")
         .select("id, name, duration_minutes, price_gel")
@@ -60,8 +86,39 @@ export default function Settings() {
           );
           setLoading(false);
         });
-    }, [business])
+    }, [business, loadStaff])
   );
+
+  const addStaff = async () => {
+    if (!business) return;
+    setStaffError(null);
+    if (!staffName.trim() || !staffEmail.trim()) {
+      setStaffError(t("staff.errorRequired"));
+      return;
+    }
+    setStaffSubmitting(true);
+    const { error: staffInsertError } = await supabase.from("staff").insert({
+      business_id: business.id,
+      name: staffName.trim(),
+      email: staffEmail.trim().toLowerCase(),
+      phone: staffPhone.trim() || null,
+    });
+    setStaffSubmitting(false);
+    if (staffInsertError) {
+      setStaffError(staffInsertError.message);
+      return;
+    }
+    setStaffName("");
+    setStaffEmail("");
+    setStaffPhone("");
+    setStaffFormOpen(false);
+    loadStaff();
+  };
+
+  const removeStaff = async (staffId: string) => {
+    await supabase.from("staff").delete().eq("id", staffId);
+    loadStaff();
+  };
 
   const toggleDay = (day: Weekday, isOpen: boolean) => {
     if (!hours) return;
@@ -150,6 +207,14 @@ export default function Settings() {
     setSubmitting(false);
     setSaved(true);
   };
+
+  if (role !== "owner") {
+    return (
+      <View style={styles.centered}>
+        <Text>{t("common.notFound")}</Text>
+      </View>
+    );
+  }
 
   if (loading || !hours) {
     return (
@@ -246,6 +311,83 @@ export default function Settings() {
           <Text style={styles.buttonText}>{t("common.save")}</Text>
         )}
       </Pressable>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>{t("settings.staff")}</Text>
+        {staffList.map((member) => (
+          <View key={member.id} style={styles.staffRow}>
+            <View style={styles.staffInfo}>
+              <Text style={styles.staffName}>{member.name}</Text>
+              <Text style={styles.staffDetail}>
+                {member.email}
+                {member.phone ? ` · ${member.phone}` : ""}
+              </Text>
+              <Text
+                style={[
+                  styles.staffStatus,
+                  { color: member.user_id ? colors.success : colors.muted },
+                ]}
+              >
+                {member.user_id ? t("staff.active") : t("staff.pending")}
+              </Text>
+            </View>
+            <Pressable onPress={() => removeStaff(member.id)} style={styles.removeButton}>
+              <Text style={styles.removeButtonText}>×</Text>
+            </Pressable>
+          </View>
+        ))}
+
+        {staffFormOpen ? (
+          <View style={styles.staffForm}>
+            <TextInput
+              style={styles.input}
+              placeholder={t("customer.name")}
+              value={staffName}
+              onChangeText={setStaffName}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder={t("staff.email")}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={staffEmail}
+              onChangeText={setStaffEmail}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder={t("customer.phone")}
+              keyboardType="phone-pad"
+              value={staffPhone}
+              onChangeText={setStaffPhone}
+            />
+            <Text style={styles.staffHint}>{t("staff.hint")}</Text>
+            {staffError ? <Text style={styles.error}>{staffError}</Text> : null}
+            <View style={styles.staffActions}>
+              <Pressable
+                style={styles.secondaryButton}
+                onPress={() => setStaffFormOpen(false)}
+              >
+                <Text style={styles.secondaryButtonText}>{t("common.cancel")}</Text>
+              </Pressable>
+              <Pressable
+                style={styles.primaryButtonSmall}
+                onPress={addStaff}
+                disabled={staffSubmitting}
+              >
+                {staffSubmitting ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>{t("common.save")}</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        ) : (
+          <Pressable style={styles.addButton} onPress={() => setStaffFormOpen(true)}>
+            <Text style={styles.addButtonText}>{t("staff.add")}</Text>
+          </Pressable>
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -366,5 +508,67 @@ const styles = StyleSheet.create({
   savedText: {
     color: colors.success,
     fontWeight: "600",
+  },
+  staffRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 10,
+    padding: 12,
+    backgroundColor: colors.surface,
+    gap: 8,
+  },
+  staffInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  staffName: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  staffDetail: {
+    fontSize: 13,
+    color: colors.inkSoft,
+  },
+  staffStatus: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  staffForm: {
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 10,
+    padding: 12,
+    gap: 8,
+    backgroundColor: colors.surface,
+  },
+  staffHint: {
+    fontSize: 12,
+    color: colors.muted,
+  },
+  staffActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  secondaryButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 8,
+    padding: 12,
+    alignItems: "center",
+  },
+  secondaryButtonText: {
+    color: colors.primary,
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  primaryButtonSmall: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    padding: 12,
+    alignItems: "center",
   },
 });

@@ -15,7 +15,7 @@ import { DashboardStats } from "@/components/DashboardStats";
 
 export default function Index() {
   const { session, isLoading: isAuthLoading, signOut } = useAuth();
-  const { business, isLoading: isBusinessLoading } = useBusiness();
+  const { business, role, isLoading: isBusinessLoading } = useBusiness();
   const { language, setLanguage, t } = useLanguage();
 
   if (isAuthLoading || (session && isBusinessLoading)) {
@@ -81,9 +81,11 @@ export default function Index() {
         <Link href="/inventory" style={[styles.outlineButton, styles.navButton]}>
           {t("home.inventory")}
         </Link>
-        <Link href="/settings" style={[styles.outlineButton, styles.navButton]}>
-          {t("home.settings")}
-        </Link>
+        {role === "owner" ? (
+          <Link href="/settings" style={[styles.outlineButton, styles.navButton]}>
+            {t("home.settings")}
+          </Link>
+        ) : null}
       </View>
 
       <DashboardStats />

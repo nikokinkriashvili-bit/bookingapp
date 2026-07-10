@@ -96,7 +96,16 @@ These deliberately diverge from the original TRD text. They were made with Niko 
    c. ~~Landed cost / COGS calculator~~ **deferred (confirmed with Niko, July 2026):** POs are quantity-first for now — all internal operations are GEL, and FX/landed cost only matters for the importer side, which Niko will spec in a separate importer-module TRD (drafting it in Cowork). The nullable landed-cost columns in migration 006 stay dormant until then; don't build against them.
    d. ~~Shop tier: product consumption per job + §6.6 loop~~ ✅ (migration 007: job_products, business_directory view, linked-supplier RLS fix via security-definer function, name/SKU snapshot on PO items. Stock adjusts when consumption is logged, NOT on job status change — deliberate, prevents double-counting. Incoming-orders queue is read-only; fulfilment pipeline states wait for Niko's importer TRD.)
 10. ~~Remaining gaps: business settings screen + catalog Georgian names migration~~ ✅ (migration 008 adds `label_ka`/`name_ka`; onboarding seeds service names in the active language; `/settings` edits name/hours/services; language toggle also on login)
-11. Capacity management (TRD v2 §6.3 / BRD §4.4, blocking overbooked slots) — **needs product definition from Niko first** (what "capacity" means for a detailing shop: bays? staff? max concurrent jobs?)
+11. **User-feedback backlog (July 2026, Niko approved building in this order):**
+    a. ~~Staff accounts + job assignment~~ ✅ (migration 009: staff table, member-based RLS rewrite, email-claim linking; assignee picker on intake/edit; assignee on day cards; staff calendar filter; staff roster in /settings, owner-only)
+    b. Photo capture + before/after gallery on vehicle profile (storage seam: Supabase Storage now, R2 later)
+    c. Rebooking/maintenance reminders (BRD §5.1 schedule) — WhatsApp seam
+    d. Public booking link (invoicege.ge/shopname style, BK-01)
+    e. Deposit collection at booking (BOG seam)
+    f. Capacity limits (needs product definition from Niko: bays? staff? max concurrent jobs?)
+    g. Push notifications for owner (low stock, overdue, no-show) — **Niko requirement: customer-facing notifications carry confirm/reject feedback that updates the job status** (e.g. booking confirmation → customer confirms or rejects → job status flips accordingly; applies to WhatsApp messages when wired)
+    h. Simple downloadable receipt (PDF)
+    i. Repeat-last-order shortcut
 12. WhatsApp integration · 13. BOG payments · 14. NBG rate fetch (all Phase 1b, per TRD v2 seam strategy)
 15. Internal pilot with Carbros + network detailers
 

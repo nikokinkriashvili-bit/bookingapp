@@ -29,6 +29,8 @@ type Service = {
   price_gel: number | null;
 };
 
+type StaffOption = { id: string; name: string };
+
 type JobDetail = {
   id: string;
   status: JobStatus;
@@ -36,6 +38,7 @@ type JobDetail = {
   scheduled_slot: string;
   scheduled_end: string;
   price_total: number | null;
+  assigned_staff_id: string | null;
   vehicles: { plate_number: string; make: string | null; model: string | null } | null;
   customers: { name: string; phone: string } | null;
 };
@@ -61,6 +64,8 @@ export default function EditJob() {
 
   const [job, setJob] = useState<JobDetail | null>(null);
   const [services, setServices] = useState<Service[]>([]);
+  const [staff, setStaff] = useState<StaffOption[]>([]);
+  const [assignedStaffId, setAssignedStaffId] = useState<string | null>(null);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [status, setStatus] = useState<JobStatus>("booked");
   const [fromDate, setFromDate] = useState("");
@@ -123,6 +128,12 @@ export default function EditJob() {
       .select("id, name, duration_minutes, price_gel")
       .eq("business_id", business.id)
       .then(({ data }) => setServices(data ?? []));
+    supabase
+      .from("staff")
+      .select("id, name")
+      .eq("business_id", business.id)
+      .order("name")
+      .then(({ data }) => setStaff(data ?? []));
   }, [business]);
 
   useEffect(() => {
@@ -130,7 +141,7 @@ export default function EditJob() {
     supabase
       .from("jobs")
       .select(
-        "id, status, service_ids, scheduled_slot, scheduled_end, price_total, vehicles(plate_number, make, model), customers(name, phone)"
+        "id, status, service_ids, scheduled_slot, scheduled_end, price_total, assigned_staff_id, vehicles(plate_number, make, model), customers(name, phone)"
       )
       .eq("id", id)
       .single()
@@ -142,6 +153,7 @@ export default function EditJob() {
         const j = data as unknown as JobDetail;
         setJob(j);
         setSelectedServiceIds(j.service_ids ?? []);
+        setAssignedStaffId(j.assigned_staff_id);
         setStatus(j.status);
         const start = new Date(j.scheduled_slot);
         const end = new Date(j.scheduled_end);
@@ -197,6 +209,7 @@ export default function EditJob() {
         scheduled_slot: scheduledSlot.toISOString(),
         scheduled_end: scheduledEnd.toISOString(),
         price_total: price.trim() ? Number(price) : 0,
+        assigned_staff_id: assignedStaffId,
       })
       .eq("id", job.id);
     setSubmitting(false);
@@ -354,6 +367,44 @@ export default function EditJob() {
           <Text style={styles.addProductText}>{t("po.addItem")}</Text>
         </Pressable>
       </View>
+
+      {staff.length > 0 ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>{t("job.assignee")}</Text>
+          <Pressable
+            style={[styles.option, assignedStaffId === null && styles.optionSelected]}
+            onPress={() => setAssignedStaffId(null)}
+          >
+            <Text
+              style={
+                assignedStaffId === null ? styles.optionTextSelected : styles.optionText
+              }
+            >
+              {t("job.unassigned")}
+            </Text>
+          </Pressable>
+          {staff.map((member) => (
+            <Pressable
+              key={member.id}
+              style={[
+                styles.option,
+                assignedStaffId === member.id && styles.optionSelected,
+              ]}
+              onPress={() => setAssignedStaffId(member.id)}
+            >
+              <Text
+                style={
+                  assignedStaffId === member.id
+                    ? styles.optionTextSelected
+                    : styles.optionText
+                }
+              >
+                {member.name}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>{t("job.priceGel")}</Text>

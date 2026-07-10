@@ -8,10 +8,19 @@ import { useT } from "@/providers/LanguageProvider";
 export function CalendarFiltersButton() {
   const t = useT();
   const [open, setOpen] = useState(false);
-  const { services, excludedStatuses, excludedServiceIds, toggleStatus, toggleService } =
-    useCalendarFilters();
+  const {
+    services,
+    staff,
+    excludedStatuses,
+    excludedServiceIds,
+    excludedStaffIds,
+    toggleStatus,
+    toggleService,
+    toggleStaff,
+  } = useCalendarFilters();
 
-  const activeCount = excludedStatuses.size + excludedServiceIds.size;
+  const activeCount =
+    excludedStatuses.size + excludedServiceIds.size + excludedStaffIds.size;
 
   return (
     <>
@@ -72,6 +81,27 @@ export function CalendarFiltersButton() {
                   );
                 })
               )}
+
+              {staff.length > 0 ? (
+                <>
+                  <Text style={styles.sectionTitle}>{t("filters.staffSection")}</Text>
+                  {staff.map((member) => {
+                    const checked = !excludedStaffIds.has(member.id);
+                    return (
+                      <Pressable
+                        key={member.id}
+                        style={styles.row}
+                        onPress={() => toggleStaff(member.id)}
+                      >
+                        <View
+                          style={[styles.checkbox, checked && styles.checkboxChecked]}
+                        />
+                        <Text style={styles.rowText}>{member.name}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </>
+              ) : null}
             </ScrollView>
             <Pressable style={styles.doneButton} onPress={() => setOpen(false)}>
               <Text style={styles.doneButtonText}>{t("filters.done")}</Text>

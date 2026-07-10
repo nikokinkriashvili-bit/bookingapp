@@ -27,6 +27,7 @@ type JobRow = {
   scheduled_slot: string;
   price_total: number | null;
   service_ids: string[] | null;
+  assigned_staff_id: string | null;
   vehicles: { make: string | null; model: string | null } | null;
 };
 
@@ -49,7 +50,9 @@ export default function CalendarMonth() {
     const rangeEnd = addDays(rangeStart, 42);
     const { data } = await supabase
       .from("jobs")
-      .select("status, scheduled_slot, price_total, service_ids, vehicles(make, model)")
+      .select(
+        "status, scheduled_slot, price_total, service_ids, assigned_staff_id, vehicles(make, model)"
+      )
       .eq("business_id", business.id)
       .gte("scheduled_slot", rangeStart.toISOString())
       .lt("scheduled_slot", rangeEnd.toISOString());

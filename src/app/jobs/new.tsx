@@ -40,6 +40,8 @@ type Service = {
   price_gel: number | null;
 };
 
+type StaffOption = { id: string; name: string };
+
 export default function NewJob() {
   const t = useT();
   const { business } = useBusiness();
@@ -68,6 +70,8 @@ export default function NewJob() {
 
   const [services, setServices] = useState<Service[]>([]);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
+  const [staff, setStaff] = useState<StaffOption[]>([]);
+  const [assignedStaffId, setAssignedStaffId] = useState<string | null>(null);
 
   const [fromDate, setFromDate] = useState(dateParam ?? "");
   const [fromTime, setFromTime] = useState("");
@@ -88,6 +92,12 @@ export default function NewJob() {
       .select("id, name, duration_minutes, price_gel")
       .eq("business_id", business.id)
       .then(({ data }) => setServices(data ?? []));
+    supabase
+      .from("staff")
+      .select("id, name")
+      .eq("business_id", business.id)
+      .order("name")
+      .then(({ data }) => setStaff(data ?? []));
   }, [business]);
 
   useEffect(() => {
@@ -280,6 +290,7 @@ export default function NewJob() {
         scheduled_slot: scheduledSlot.toISOString(),
         scheduled_end: scheduledEnd.toISOString(),
         price_total: price.trim() ? Number(price) : 0,
+        assigned_staff_id: assignedStaffId,
       })
       .select("id")
       .single();
@@ -428,6 +439,44 @@ export default function NewJob() {
           </Text>
         ) : null}
       </View>
+
+      {staff.length > 0 ? (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>{t("job.assignee")}</Text>
+          <Pressable
+            style={[styles.option, assignedStaffId === null && styles.optionSelected]}
+            onPress={() => setAssignedStaffId(null)}
+          >
+            <Text
+              style={
+                assignedStaffId === null ? styles.optionTextSelected : styles.optionText
+              }
+            >
+              {t("job.unassigned")}
+            </Text>
+          </Pressable>
+          {staff.map((member) => (
+            <Pressable
+              key={member.id}
+              style={[
+                styles.option,
+                assignedStaffId === member.id && styles.optionSelected,
+              ]}
+              onPress={() => setAssignedStaffId(member.id)}
+            >
+              <Text
+                style={
+                  assignedStaffId === member.id
+                    ? styles.optionTextSelected
+                    : styles.optionText
+                }
+              >
+                {member.name}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>{t("job.priceGel")}</Text>
