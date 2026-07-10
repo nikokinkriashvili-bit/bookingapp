@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,6 +16,11 @@ import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
 import { parseDateAndTime, toDateKey, toTimeString } from "@/lib/calendarDate";
 import { STATUS_ORDER, statusLabelKey, type JobStatus } from "@/lib/jobStatus";
+import {
+  addJobProduct,
+  changeJobProductQty,
+  removeJobProductRow,
+} from "@/lib/consumption";
 
 type Service = {
   id: string;
@@ -32,6 +38,20 @@ type JobDetail = {
   price_total: number | null;
   vehicles: { plate_number: string; make: string | null; model: string | null } | null;
   customers: { name: string; phone: string } | null;
+};
+
+type ConsumedRow = {
+  id: string;
+  product_id: string;
+  qty: number;
+  products: { name: string; sku: string } | null;
+};
+
+type ProductOption = {
+  id: string;
+  name: string;
+  sku: string;
+  stock_qty: number;
 };
 
 export default function EditJob() {
@@ -52,6 +72,49 @@ export default function EditJob() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const [consumed, setConsumed] = useState<ConsumedRow[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [productOptions, setProductOptions] = useState<ProductOption[]>([]);
+  const [consumptionBusy, setConsumptionBusy] = useState(false);
+  const [consumptionError, setConsumptionError] = useState<string | null>(null);
+
+  const loadConsumed = useCallback(async () => {
+    if (!id) return;
+    const { data } = await supabase
+      .from("job_products")
+      .select("id, product_id, qty, products(name, sku)")
+      .eq("job_id", id);
+    setConsumed((data as unknown as ConsumedRow[]) ?? []);
+  }, [id]);
+
+  useEffect(() => {
+    loadConsumed();
+  }, [loadConsumed]);
+
+  const runConsumption = async (action: () => Promise<string | null>) => {
+    setConsumptionError(null);
+    setConsumptionBusy(true);
+    const actionError = await action();
+    setConsumptionBusy(false);
+    if (actionError) {
+      setConsumptionError(actionError);
+      return;
+    }
+    loadConsumed();
+  };
+
+  const openProductPicker = async () => {
+    if (!business) return;
+    const { data } = await supabase
+      .from("products")
+      .select("id, name, sku, stock_qty")
+      .eq("business_id", business.id)
+      .order("name");
+    const used = new Set(consumed.map((c) => c.product_id));
+    setProductOptions((data ?? []).filter((p) => !used.has(p.id)));
+    setPickerOpen(true);
+  };
 
   useEffect(() => {
     if (!business) return;
@@ -222,6 +285,77 @@ export default function EditJob() {
       </View>
 
       <View style={styles.section}>
+        <Text style={styles.sectionLabel}>{t("job.productsUsed")}</Text>
+        {consumed.length === 0 ? (
+          <Text style={styles.consumptionHint}>{t("job.noProducts")}</Text>
+        ) : (
+          consumed.map((row) => (
+            <View key={row.id} style={styles.consumedRow}>
+              <View style={styles.consumedInfo}>
+                <Text style={styles.consumedName} numberOfLines={1}>
+                  {row.products?.name ?? "—"}
+                </Text>
+                <Text style={styles.consumedSku}>{row.products?.sku}</Text>
+              </View>
+              <View style={styles.stepper}>
+                <Pressable
+                  style={styles.stepButton}
+                  disabled={consumptionBusy}
+                  onPress={() =>
+                    runConsumption(() =>
+                      changeJobProductQty(
+                        row.id,
+                        row.product_id,
+                        Number(row.qty),
+                        Number(row.qty) - 1
+                      )
+                    )
+                  }
+                >
+                  <Text style={styles.stepButtonText}>−</Text>
+                </Pressable>
+                <Text style={styles.stepQty}>{row.qty}</Text>
+                <Pressable
+                  style={styles.stepButton}
+                  disabled={consumptionBusy}
+                  onPress={() =>
+                    runConsumption(() =>
+                      changeJobProductQty(
+                        row.id,
+                        row.product_id,
+                        Number(row.qty),
+                        Number(row.qty) + 1
+                      )
+                    )
+                  }
+                >
+                  <Text style={styles.stepButtonText}>+</Text>
+                </Pressable>
+              </View>
+              <Pressable
+                disabled={consumptionBusy}
+                onPress={() =>
+                  runConsumption(() =>
+                    removeJobProductRow(row.id, row.product_id, Number(row.qty))
+                  )
+                }
+              >
+                <Text style={styles.consumedRemove}>×</Text>
+              </Pressable>
+            </View>
+          ))
+        )}
+        {consumptionError ? <Text style={styles.error}>{consumptionError}</Text> : null}
+        <Pressable
+          style={styles.addProductButton}
+          disabled={consumptionBusy}
+          onPress={openProductPicker}
+        >
+          <Text style={styles.addProductText}>{t("po.addItem")}</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.section}>
         <Text style={styles.sectionLabel}>{t("job.priceGel")}</Text>
         <TextInput
           style={styles.input}
@@ -271,6 +405,35 @@ export default function EditJob() {
           <Text style={styles.buttonText}>{t("job.saveChanges")}</Text>
         )}
       </Pressable>
+
+      <Modal
+        visible={pickerOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPickerOpen(false)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setPickerOpen(false)}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t("po.pickProduct")}</Text>
+            <ScrollView style={styles.modalScroll}>
+              {productOptions.map((p) => (
+                <Pressable
+                  key={p.id}
+                  style={styles.modalOption}
+                  onPress={() => {
+                    setPickerOpen(false);
+                    runConsumption(() => addJobProduct(job.id, p.id, 1));
+                  }}
+                >
+                  <Text style={styles.modalOptionText}>
+                    {p.name} · {p.sku} ({p.stock_qty})
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 }
@@ -360,5 +523,98 @@ const styles = StyleSheet.create({
   },
   error: {
     color: colors.danger,
+  },
+  consumptionHint: {
+    fontSize: 13,
+    color: colors.muted,
+  },
+  consumedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 8,
+    padding: 10,
+    backgroundColor: colors.surface,
+  },
+  consumedInfo: {
+    flex: 1,
+  },
+  consumedName: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  consumedSku: {
+    fontSize: 11,
+    color: colors.muted,
+  },
+  stepper: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  stepButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepButtonText: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  stepQty: {
+    fontSize: 15,
+    fontWeight: "700",
+    minWidth: 24,
+    textAlign: "center",
+  },
+  consumedRemove: {
+    fontSize: 20,
+    color: colors.danger,
+    paddingHorizontal: 4,
+  },
+  addProductButton: {
+    padding: 8,
+    alignItems: "center",
+  },
+  addProductText: {
+    color: colors.primary,
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalContent: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 20,
+    width: 300,
+    maxHeight: "70%",
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  modalScroll: {
+    maxHeight: 360,
+  },
+  modalOption: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.faintLine,
+  },
+  modalOptionText: {
+    fontSize: 14,
   },
 });

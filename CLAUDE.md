@@ -78,20 +78,26 @@ These deliberately diverge from the original TRD text. They were made with Niko 
 
 ## Build roadmap (revised order, July 2026)
 
-**Approach change (confirmed with Niko):** build the full MVP app experience — all core screens and flows working with real data — *before* touching external integrations. WhatsApp and BOG move to the end. Where they will eventually plug in (e.g. "send WhatsApp confirmation" after job creation, "generate payment link" on completion), add clearly marked seams — placeholder functions/UI states with `TODO` comments referencing the TRD section — not working stubs.
+**Approach change (confirmed with Niko):** build the full platform experience — all screens and flows working with real data — *before* touching external integrations. WhatsApp, BOG, and NBG exchange-rate fetch all move to the end. Where they plug in, add clearly marked seams — placeholder functions/UI states with `TODO` comments referencing the TRD/BRD section — not working stubs (see `src/lib/integrations.ts`).
+
+**Second scope change (confirmed with Niko, July 2026):** the BRD §6/§17 stock-management module is pulled forward from Phase 3 into the current build — Niko explicitly chose to build the whole platform including both inventory tiers (importer + shop) and landed cost before integrations. This supersedes the TRD's "don't pull Phase 2/3 forward" for this module specifically; the *intelligence* parts that need real sales history (auto velocity, seasonal multipliers) still wait for data — velocity is a manual per-product field for now.
 
 1. ~~Scaffold + Supabase + business-owner auth~~ ✅
 2. ~~Onboarding flow~~ ✅
-3. ~~Supabase tables with per-business RLS~~ ✅ (`staff`, `payments`, `messages_log` deferred to their features)
+3. ~~Data model with per-business RLS~~ ✅ (`staff`, `payments`, `messages_log` deferred to their features)
 4. ~~Job intake screen~~ ✅
 5. ~~Scheduling surface~~ ✅ (calendar, not kanban — see Confirmed product decisions)
-6. Vehicle & Customer CRM screens (TRD §5.4): vehicle profile with service history, customer profile with visit count/total spend
-7. Bilingual UI (Georgian + English): set up the i18n string pattern, backfill existing screens, apply to everything new
-8. Remaining MVP-scope gaps vs. the TRD + design consistency pass over existing screens
-9. WhatsApp integration: Edge Function sending template messages on the in-scope trigger events
-10. BOG payment integration: Edge Function to generate payment links + webhook receiver
-11. Internal pilot with Carbros + 1-2 network detailers
-12. Phase 2 kickoff (photo/video, tech inspection reminders) — only after MVP is validated
+6. ~~Vehicle & Customer CRM screens~~ ✅
+7. ~~Bilingual UI foundation + backfill~~ ✅ (catalog table names still English-only — pending data migration)
+8. ~~Design token system + consistency pass + integration seams~~ ✅ (see DESIGN.md)
+9. **Stock management (BRD §6/§17), in slices:**
+   a. ~~Foundation: migration 006 (suppliers/products/POs + RLS incl. linked-supplier visibility), suppliers & products CRUD, inventory dashboard with reorder statuses~~ ✅ (built; migration 006 must be run in Supabase)
+   b. ~~Reorder engine + draft POs + receive-stock flow~~ ✅ (suggested qty respects supplier MOQ; one draft PO per supplier, merged on repeat taps; receive adds item qtys to product stock)
+   c. ~~Landed cost / COGS calculator~~ **deferred (confirmed with Niko, July 2026):** POs are quantity-first for now — all internal operations are GEL, and FX/landed cost only matters for the importer side, which Niko will spec in a separate importer-module TRD (drafting it in Cowork). The nullable landed-cost columns in migration 006 stay dormant until then; don't build against them.
+   d. ~~Shop tier: product consumption per job + §6.6 loop~~ ✅ (migration 007: job_products, business_directory view, linked-supplier RLS fix via security-definer function, name/SKU snapshot on PO items. Stock adjusts when consumption is logged, NOT on job status change — deliberate, prevents double-counting. Incoming-orders queue is read-only; fulfilment pipeline states wait for Niko's importer TRD.)
+10. Remaining gaps: business settings screen (edit hours/services), catalog Georgian names migration
+11. WhatsApp integration · 12. BOG payments · 13. NBG rate fetch
+14. Internal pilot with Carbros + network detailers
 
 ## Non-functional constraints
 

@@ -77,6 +77,10 @@ export default function Index() {
         </Link>
       </View>
 
+      <Link href="/inventory" style={styles.outlineButton}>
+        {t("home.inventory")}
+      </Link>
+
       <DashboardStats />
 
       <Text style={styles.signOut} onPress={signOut}>
