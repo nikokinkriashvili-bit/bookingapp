@@ -6,9 +6,13 @@ import {
   type PropsWithChildren,
   type SetStateAction,
 } from "react";
-import type { BusinessType, DefaultService, WorkingHours } from "@/lib/businessTypes";
+import type { BusinessType, WorkingHours } from "@/lib/businessTypes";
 
-export type DraftService = DefaultService & { priceGel: string };
+export type DraftService = {
+  name: string;
+  durationMinutes: number;
+  priceGel: string;
+};
 
 type OnboardingContextValue = {
   businessName: string;

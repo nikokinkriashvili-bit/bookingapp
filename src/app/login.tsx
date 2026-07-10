@@ -10,11 +10,11 @@ import {
 } from "react-native";
 import { colors } from "@/lib/theme";
 import { useAuth } from "@/providers/AuthProvider";
-import { useT } from "@/providers/LanguageProvider";
+import { useLanguage } from "@/providers/LanguageProvider";
 
 export default function Login() {
   const { session, signIn } = useAuth();
-  const t = useT();
+  const { language, setLanguage, t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +36,20 @@ export default function Login() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.langToggle}>
+        {(["ka", "en"] as const).map((lang) => (
+          <Pressable
+            key={lang}
+            style={[styles.langOption, language === lang && styles.langOptionActive]}
+            onPress={() => setLanguage(lang)}
+          >
+            <Text style={language === lang ? styles.langTextActive : styles.langText}>
+              {lang === "ka" ? "ქარ" : "EN"}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
       <Text style={styles.title}>{t("auth.logIn")}</Text>
 
       <TextInput
@@ -110,5 +124,31 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: colors.primary,
     marginTop: 12,
+  },
+  langToggle: {
+    flexDirection: "row",
+    alignSelf: "center",
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 8,
+    overflow: "hidden",
+    marginBottom: 8,
+  },
+  langOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  langOptionActive: {
+    backgroundColor: colors.primary,
+  },
+  langText: {
+    fontSize: 13,
+    color: colors.inkSoft,
+    fontWeight: "600",
+  },
+  langTextActive: {
+    fontSize: 13,
+    color: "#fff",
+    fontWeight: "600",
   },
 });

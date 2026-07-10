@@ -13,10 +13,10 @@ import { colors } from "@/lib/theme";
 import type { BusinessType } from "@/lib/businessTypes";
 import { useCatalog } from "@/providers/CatalogProvider";
 import { useOnboarding } from "@/providers/OnboardingProvider";
-import { useT } from "@/providers/LanguageProvider";
+import { useLanguage } from "@/providers/LanguageProvider";
 
 export default function BusinessTypeStep() {
-  const t = useT();
+  const { language, t } = useLanguage();
   const { businessTypes, isLoading: isCatalogLoading, error: catalogError } =
     useCatalog();
   const {
@@ -48,8 +48,14 @@ export default function BusinessTypeStep() {
       return;
     }
     setWorkingHours(config.defaultHours);
+    // Seed the editable service list in the user's language; once saved at
+    // the end of onboarding these become the business's own service names.
     setServices(
-      config.defaultServices.map((s) => ({ ...s, priceGel: "" }))
+      config.defaultServices.map((s) => ({
+        name: language === "ka" ? s.nameKa ?? s.name : s.name,
+        durationMinutes: s.durationMinutes,
+        priceGel: "",
+      }))
     );
     setError(null);
     router.push("/onboarding/hours");
@@ -91,7 +97,7 @@ export default function BusinessTypeStep() {
               businessType === type.value && styles.optionTextSelected,
             ]}
           >
-            {type.label}
+            {language === "ka" ? type.labelKa ?? type.label : type.label}
           </Text>
         </Pressable>
       ))}

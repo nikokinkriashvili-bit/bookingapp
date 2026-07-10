@@ -28,11 +28,11 @@ export function CatalogProvider({ children }: PropsWithChildren) {
       const [typesResult, servicesResult] = await Promise.all([
         supabase
           .from("business_type_catalog")
-          .select("value, label, default_working_hours, sort_order")
+          .select("value, label, label_ka, default_working_hours, sort_order")
           .order("sort_order"),
         supabase
           .from("default_service_templates")
-          .select("business_type, name, duration_minutes, sort_order")
+          .select("business_type, name, name_ka, duration_minutes, sort_order")
           .order("sort_order"),
       ]);
 
@@ -51,10 +51,15 @@ export function CatalogProvider({ children }: PropsWithChildren) {
       const configs: BusinessTypeConfig[] = typesResult.data.map((row) => ({
         value: row.value,
         label: row.label,
+        labelKa: row.label_ka ?? null,
         defaultHours: row.default_working_hours as WorkingHours,
         defaultServices: servicesResult.data
           .filter((s) => s.business_type === row.value)
-          .map((s) => ({ name: s.name, durationMinutes: s.duration_minutes })),
+          .map((s) => ({
+            name: s.name,
+            nameKa: s.name_ka ?? null,
+            durationMinutes: s.duration_minutes,
+          })),
       }));
 
       setBusinessTypes(configs);

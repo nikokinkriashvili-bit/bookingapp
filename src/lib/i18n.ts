@@ -267,6 +267,11 @@ const en = {
   "incoming.empty":
     "No incoming orders. They appear when a business that lists you as a linked supplier sends you a purchase order.",
   "incoming.from": "From",
+
+  // Business settings
+  "home.settings": "Settings",
+  "settings.title": "Business settings",
+  "settings.saved": "Saved.",
 };
 
 const ka: Record<StringKey, string> = {
@@ -501,6 +506,10 @@ const ka: Record<StringKey, string> = {
   "incoming.empty":
     "შემოსული შეკვეთები არ არის. ისინი გამოჩნდებიან, როცა დაკავშირებული ბიზნესი გამოგიგზავნით შეკვეთას.",
   "incoming.from": "ვისგან",
+
+  "home.settings": "პარამეტრები",
+  "settings.title": "ბიზნესის პარამეტრები",
+  "settings.saved": "შენახულია.",
 };
 
 export type StringKey = keyof typeof en;

@@ -77,9 +77,14 @@ export default function Index() {
         </Link>
       </View>
 
-      <Link href="/inventory" style={styles.outlineButton}>
-        {t("home.inventory")}
-      </Link>
+      <View style={styles.navRow}>
+        <Link href="/inventory" style={[styles.outlineButton, styles.navButton]}>
+          {t("home.inventory")}
+        </Link>
+        <Link href="/settings" style={[styles.outlineButton, styles.navButton]}>
+          {t("home.settings")}
+        </Link>
+      </View>
 
       <DashboardStats />
 

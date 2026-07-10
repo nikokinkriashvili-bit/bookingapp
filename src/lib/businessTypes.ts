@@ -18,12 +18,14 @@ export type WorkingHours = Record<Weekday, DayHours>;
 
 export type DefaultService = {
   name: string;
+  nameKa: string | null;
   durationMinutes: number;
 };
 
 export type BusinessTypeConfig = {
   value: BusinessType;
   label: string;
+  labelKa: string | null;
   defaultHours: WorkingHours;
   defaultServices: DefaultService[];
 };

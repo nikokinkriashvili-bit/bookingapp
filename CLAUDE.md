@@ -40,7 +40,7 @@ When building or reworking UI, apply the `frontend-design` skill's principles (i
 
 ## What this project is
 
-A booking/scheduling app for car detailing businesses in Georgia (the country), built for Carbros' own detailing operation and a small pilot group of Carbros-network detailers — not a cold public launch. The TRD (`BookingApp_TRD_v1.md`) is derived from a separate BRD (Business Requirements Document, not in this repo) and is written to be handed to Claude Code directly as the build spec. Read it in full before starting implementation work; it is short and the source of truth for scope decisions.
+A booking/scheduling app for car detailing businesses in Georgia (the country), built for Carbros' own detailing operation and a small pilot group of Carbros-network detailers — not a cold public launch. **The standing spec is `BookingApp_TRD_v2_FullScope.md`** (supersedes v1; full BRD scope, phased). Read it in full before implementation work. Note it slightly trails reality: its roadmap items 6–9 are built, and the stock-management module (built at Niko's explicit direction, see roadmap below) isn't reflected in it. Where v2 and this file disagree on build status, this file wins; on product intent, v2 wins. The InvoiceGE BRD (`InvoiceGE_BRD_v4_final.docx`) is background context. A separate importer-module TRD is being drafted by Niko (in Cowork) for the wholesaler/importer side detail.
 
 ## Tech stack (decided)
 
@@ -95,9 +95,10 @@ These deliberately diverge from the original TRD text. They were made with Niko 
    b. ~~Reorder engine + draft POs + receive-stock flow~~ ✅ (suggested qty respects supplier MOQ; one draft PO per supplier, merged on repeat taps; receive adds item qtys to product stock)
    c. ~~Landed cost / COGS calculator~~ **deferred (confirmed with Niko, July 2026):** POs are quantity-first for now — all internal operations are GEL, and FX/landed cost only matters for the importer side, which Niko will spec in a separate importer-module TRD (drafting it in Cowork). The nullable landed-cost columns in migration 006 stay dormant until then; don't build against them.
    d. ~~Shop tier: product consumption per job + §6.6 loop~~ ✅ (migration 007: job_products, business_directory view, linked-supplier RLS fix via security-definer function, name/SKU snapshot on PO items. Stock adjusts when consumption is logged, NOT on job status change — deliberate, prevents double-counting. Incoming-orders queue is read-only; fulfilment pipeline states wait for Niko's importer TRD.)
-10. Remaining gaps: business settings screen (edit hours/services), catalog Georgian names migration
-11. WhatsApp integration · 12. BOG payments · 13. NBG rate fetch
-14. Internal pilot with Carbros + network detailers
+10. ~~Remaining gaps: business settings screen + catalog Georgian names migration~~ ✅ (migration 008 adds `label_ka`/`name_ka`; onboarding seeds service names in the active language; `/settings` edits name/hours/services; language toggle also on login)
+11. Capacity management (TRD v2 §6.3 / BRD §4.4, blocking overbooked slots) — **needs product definition from Niko first** (what "capacity" means for a detailing shop: bays? staff? max concurrent jobs?)
+12. WhatsApp integration · 13. BOG payments · 14. NBG rate fetch (all Phase 1b, per TRD v2 seam strategy)
+15. Internal pilot with Carbros + network detailers
 
 ## Non-functional constraints
 
