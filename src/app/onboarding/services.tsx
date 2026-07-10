@@ -15,6 +15,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useOnboarding } from "@/providers/OnboardingProvider";
 import { useT } from "@/providers/LanguageProvider";
+import { FieldLabel } from "@/components/FieldLabel";
 
 export default function ServicesStep() {
   const colors = useThemeColors();
@@ -109,6 +110,19 @@ export default function ServicesStep() {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{t("onboarding.servicesTitle")}</Text>
 
+      {services.length > 0 ? (
+        <View style={styles.serviceRow}>
+          <FieldLabel styleOverride={styles.serviceName}>
+            {t("onboarding.serviceName")}
+          </FieldLabel>
+          <FieldLabel styleOverride={styles.serviceDuration}>
+            {t("onboarding.serviceMin")}
+          </FieldLabel>
+          <FieldLabel styleOverride={styles.servicePrice}>
+            {t("onboarding.serviceGel")}
+          </FieldLabel>
+        </View>
+      ) : null}
       {services.map((service, index) => (
         <View key={index} style={styles.serviceRow}>
           <TextInput

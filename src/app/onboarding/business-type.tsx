@@ -14,6 +14,7 @@ import type { BusinessType } from "@/lib/businessTypes";
 import { useCatalog } from "@/providers/CatalogProvider";
 import { useOnboarding } from "@/providers/OnboardingProvider";
 import { useLanguage } from "@/providers/LanguageProvider";
+import { FieldLabel } from "@/components/FieldLabel";
 
 export default function BusinessTypeStep() {
   const colors = useThemeColors();
@@ -75,9 +76,9 @@ export default function BusinessTypeStep() {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{t("onboarding.title")}</Text>
 
+      <FieldLabel>{t("onboarding.businessName")}</FieldLabel>
       <TextInput
         style={styles.input}
-        placeholder={t("onboarding.businessName")}
         value={businessName}
         onChangeText={setBusinessName}
       />

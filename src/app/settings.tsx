@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
+import { FieldLabel } from "@/components/FieldLabel";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
@@ -271,6 +272,19 @@ export default function Settings() {
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>{t("onboarding.servicesTitle")}</Text>
+        {services.length > 0 ? (
+          <View style={styles.serviceRow}>
+            <FieldLabel styleOverride={styles.serviceName}>
+              {t("onboarding.serviceName")}
+            </FieldLabel>
+            <FieldLabel styleOverride={styles.serviceSmall}>
+              {t("onboarding.serviceMin")}
+            </FieldLabel>
+            <FieldLabel styleOverride={styles.serviceSmall}>
+              {t("onboarding.serviceGel")}
+            </FieldLabel>
+          </View>
+        ) : null}
         {services.map((service, index) => (
           <View key={service.id ?? `new-${index}`} style={styles.serviceRow}>
             <TextInput
@@ -341,23 +355,23 @@ export default function Settings() {
 
         {staffFormOpen ? (
           <View style={styles.staffForm}>
+            <FieldLabel>{t("customer.name")}</FieldLabel>
             <TextInput
               style={styles.input}
-              placeholder={t("customer.name")}
               value={staffName}
               onChangeText={setStaffName}
             />
+            <FieldLabel>{t("staff.email")}</FieldLabel>
             <TextInput
               style={styles.input}
-              placeholder={t("staff.email")}
               autoCapitalize="none"
               keyboardType="email-address"
               value={staffEmail}
               onChangeText={setStaffEmail}
             />
+            <FieldLabel>{t("customer.phone")}</FieldLabel>
             <TextInput
               style={styles.input}
-              placeholder={t("customer.phone")}
               keyboardType="phone-pad"
               value={staffPhone}
               onChangeText={setStaffPhone}

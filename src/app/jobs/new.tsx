@@ -14,6 +14,7 @@ import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
 import { sendWhatsAppMessage } from "@/lib/integrations";
+import { FieldLabel } from "@/components/FieldLabel";
 import { addMinutesToDateTime, parseDateAndTime } from "@/lib/calendarDate";
 
 type Vehicle = {
@@ -374,19 +375,22 @@ export default function NewJob() {
       {hasLookedUp && !foundVehicle ? (
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>{t("job.vehicleDetails")}</Text>
-          <TextInput style={styles.input} placeholder={t("vehicle.make")} value={make} onChangeText={setMake} />
-          <TextInput style={styles.input} placeholder={t("vehicle.model")} value={model} onChangeText={setModel} />
+          <FieldLabel>{t("vehicle.make")}</FieldLabel>
+          <TextInput style={styles.input} value={make} onChangeText={setMake} />
+          <FieldLabel>{t("vehicle.model")}</FieldLabel>
+          <TextInput style={styles.input} value={model} onChangeText={setModel} />
+          <FieldLabel>{t("vehicle.year")}</FieldLabel>
           <TextInput
             style={styles.input}
-            placeholder={t("vehicle.year")}
             keyboardType="numeric"
             value={year}
             onChangeText={setYear}
           />
-          <TextInput style={styles.input} placeholder={t("vehicle.colour")} value={colour} onChangeText={setColour} />
+          <FieldLabel>{t("vehicle.colour")}</FieldLabel>
+          <TextInput style={styles.input} value={colour} onChangeText={setColour} />
+          <FieldLabel>{t("vehicle.fuelType")}</FieldLabel>
           <TextInput
             style={styles.input}
-            placeholder={t("vehicle.fuelType")}
             value={fuelType}
             onChangeText={setFuelType}
           />
@@ -396,15 +400,15 @@ export default function NewJob() {
       {hasLookedUp && selectedCustomerId === "new" ? (
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>{t("job.customerDetails")}</Text>
+          <FieldLabel>{t("customer.name")}</FieldLabel>
           <TextInput
             style={styles.input}
-            placeholder={t("customer.name")}
             value={customerName}
             onChangeText={setCustomerName}
           />
+          <FieldLabel>{t("customer.phone")}</FieldLabel>
           <TextInput
             style={styles.input}
-            placeholder={t("customer.phone")}
             keyboardType="phone-pad"
             value={customerPhone}
             onChangeText={setCustomerPhone}

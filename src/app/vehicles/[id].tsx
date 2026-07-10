@@ -14,6 +14,7 @@ import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
 import { PlateChip } from "@/components/PlateChip";
+import { FieldLabel } from "@/components/FieldLabel";
 import { formatGel, type StringKey } from "@/lib/i18n";
 import { toDateKey } from "@/lib/calendarDate";
 import { statusTone, type JobStatus } from "@/lib/jobStatus";
@@ -188,19 +189,22 @@ export default function VehicleProfile() {
 
         {editing ? (
           <View style={styles.editForm}>
-            <TextInput style={styles.input} placeholder={t("vehicle.make")} value={make} onChangeText={setMake} />
-            <TextInput style={styles.input} placeholder={t("vehicle.model")} value={model} onChangeText={setModel} />
+            <FieldLabel>{t("vehicle.make")}</FieldLabel>
+            <TextInput style={styles.input} value={make} onChangeText={setMake} />
+            <FieldLabel>{t("vehicle.model")}</FieldLabel>
+            <TextInput style={styles.input} value={model} onChangeText={setModel} />
+            <FieldLabel>{t("vehicle.year")}</FieldLabel>
             <TextInput
               style={styles.input}
-              placeholder={t("vehicle.year")}
               keyboardType="numeric"
               value={year}
               onChangeText={setYear}
             />
-            <TextInput style={styles.input} placeholder={t("vehicle.colour")} value={colour} onChangeText={setColour} />
+            <FieldLabel>{t("vehicle.colour")}</FieldLabel>
+            <TextInput style={styles.input} value={colour} onChangeText={setColour} />
+            <FieldLabel>{t("vehicle.fuelType")}</FieldLabel>
             <TextInput
               style={styles.input}
-              placeholder={t("vehicle.fuelType")}
               value={fuelType}
               onChangeText={setFuelType}
             />

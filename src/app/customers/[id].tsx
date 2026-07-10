@@ -15,6 +15,7 @@ import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
 import { PlateChip } from "@/components/PlateChip";
+import { FieldLabel } from "@/components/FieldLabel";
 import { formatGel, type StringKey } from "@/lib/i18n";
 import { toDateKey } from "@/lib/calendarDate";
 import { statusTone, type JobStatus } from "@/lib/jobStatus";
@@ -183,22 +184,22 @@ export default function CustomerProfile() {
 
         {editing ? (
           <View style={styles.editForm}>
+            <FieldLabel>{t("customer.name")}</FieldLabel>
             <TextInput
               style={styles.input}
-              placeholder={t("customer.name")}
               value={name}
               onChangeText={setName}
             />
+            <FieldLabel>{t("customer.phone")}</FieldLabel>
             <TextInput
               style={styles.input}
-              placeholder={t("customer.phone")}
               keyboardType="phone-pad"
               value={phone}
               onChangeText={setPhone}
             />
+            <FieldLabel>{t("customer.email")}</FieldLabel>
             <TextInput
               style={styles.input}
-              placeholder={t("customer.email")}
               keyboardType="email-address"
               autoCapitalize="none"
               value={email}

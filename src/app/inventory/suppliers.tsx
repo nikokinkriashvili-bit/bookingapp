@@ -14,6 +14,7 @@ import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
+import { FieldLabel } from "@/components/FieldLabel";
 
 type Supplier = {
   id: string;
@@ -139,21 +140,21 @@ export default function Suppliers() {
           <Text style={styles.sectionLabel}>
             {editing === "new" ? t("supplier.newTitle") : t("supplier.editTitle")}
           </Text>
+          <FieldLabel>{t("supplier.name")}</FieldLabel>
           <TextInput
             style={styles.input}
-            placeholder={t("supplier.name")}
             value={name}
             onChangeText={setName}
           />
+          <FieldLabel>{t("supplier.country")}</FieldLabel>
           <TextInput
             style={styles.input}
-            placeholder={t("supplier.country")}
             value={country}
             onChangeText={setCountry}
           />
+          <FieldLabel>{t("supplier.currency")}</FieldLabel>
           <TextInput
             style={styles.input}
-            placeholder={t("supplier.currency")}
             autoCapitalize="characters"
             value={currency}
             onChangeText={(v) => setCurrency(v.toUpperCase())}
@@ -174,9 +175,9 @@ export default function Suppliers() {
             value={moq}
             onChangeText={setMoq}
           />
+          <FieldLabel>{t("supplier.paymentTerms")}</FieldLabel>
           <TextInput
             style={styles.input}
-            placeholder={t("supplier.paymentTerms")}
             value={paymentTerms}
             onChangeText={setPaymentTerms}
           />

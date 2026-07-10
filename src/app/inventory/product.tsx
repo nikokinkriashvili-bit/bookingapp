@@ -13,6 +13,7 @@ import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
+import { FieldLabel } from "@/components/FieldLabel";
 
 type Supplier = { id: string; name: string };
 
@@ -148,22 +149,22 @@ export default function ProductForm() {
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>{t("product.identity")}</Text>
+        <FieldLabel>{t("product.sku")}</FieldLabel>
         <TextInput
           style={styles.input}
-          placeholder={t("product.sku")}
           autoCapitalize="characters"
           value={sku}
           onChangeText={(v) => setSku(v.toUpperCase())}
         />
+        <FieldLabel>{t("product.name")}</FieldLabel>
         <TextInput
           style={styles.input}
-          placeholder={t("product.name")}
           value={name}
           onChangeText={setName}
         />
+        <FieldLabel>{t("product.category")}</FieldLabel>
         <TextInput
           style={styles.input}
-          placeholder={t("product.category")}
           value={category}
           onChangeText={setCategory}
         />

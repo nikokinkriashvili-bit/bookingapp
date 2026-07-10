@@ -11,6 +11,7 @@ import {
 import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLanguage } from "@/providers/LanguageProvider";
+import { FieldLabel } from "@/components/FieldLabel";
 
 export default function Login() {
   const colors = useThemeColors();
@@ -54,17 +55,17 @@ export default function Login() {
 
       <Text style={styles.title}>{t("auth.logIn")}</Text>
 
+      <FieldLabel>{t("auth.email")}</FieldLabel>
       <TextInput
         style={styles.input}
-        placeholder={t("auth.email")}
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
         onChangeText={setEmail}
       />
+      <FieldLabel>{t("auth.password")}</FieldLabel>
       <TextInput
         style={styles.input}
-        placeholder={t("auth.password")}
         secureTextEntry
         value={password}
         onChangeText={setPassword}
