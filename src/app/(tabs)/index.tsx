@@ -1,25 +1,18 @@
 import { Link, Redirect } from "expo-router";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useMemo } from "react";
 import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import { useBusiness } from "@/providers/BusinessProvider";
-import { useLanguage } from "@/providers/LanguageProvider";
+import { useT } from "@/providers/LanguageProvider";
 import { DashboardStats } from "@/components/DashboardStats";
 
 export default function Index() {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
-  const { session, isLoading: isAuthLoading, signOut } = useAuth();
+  const { session, isLoading: isAuthLoading } = useAuth();
   const { business, isLoading: isBusinessLoading } = useBusiness();
-  const { language, setLanguage, t } = useLanguage();
+  const t = useT();
 
   if (isAuthLoading || (session && isBusinessLoading)) {
     return (
@@ -40,27 +33,10 @@ export default function Index() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.topRow}>
-        <View>
-          <Text style={styles.businessName}>{business.name}</Text>
-          <Text style={styles.email}>{session.user.email}</Text>
-        </View>
-        <View style={styles.langToggle}>
-          {(["ka", "en"] as const).map((lang) => (
-            <Pressable
-              key={lang}
-              style={[styles.langOption, language === lang && styles.langOptionActive]}
-              onPress={() => setLanguage(lang)}
-            >
-              <Text
-                style={
-                  language === lang ? styles.langTextActive : styles.langText
-                }
-              >
-                {lang === "ka" ? "ქარ" : "EN"}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        <Text style={styles.businessName} numberOfLines={1}>
+          {business.name}
+        </Text>
+        <Text style={styles.email}>{session.user.email}</Text>
       </View>
 
       <View style={styles.navRow}>
@@ -73,10 +49,6 @@ export default function Index() {
       </View>
 
       <DashboardStats />
-
-      <Text style={styles.signOut} onPress={signOut}>
-        {t("home.signOut")}
-      </Text>
     </ScrollView>
   );
 }
@@ -93,10 +65,8 @@ function createStyles(colors: ThemeColors) {
     gap: 10,
   },
   topRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
     marginBottom: 6,
+    marginRight: 48,
   },
   businessName: {
     color: colors.ink,
@@ -107,30 +77,6 @@ function createStyles(colors: ThemeColors) {
     fontSize: 13,
     color: colors.muted,
     marginTop: 2,
-  },
-  langToggle: {
-    flexDirection: "row",
-    borderWidth: 1,
-    borderColor: colors.line,
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  langOption: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  langOptionActive: {
-    backgroundColor: colors.primary,
-  },
-  langText: {
-    fontSize: 13,
-    color: colors.inkSoft,
-    fontWeight: "600",
-  },
-  langTextActive: {
-    fontSize: 13,
-    color: "#fff",
-    fontWeight: "600",
   },
   outlineButton: {
     backgroundColor: colors.surface,
@@ -150,12 +96,6 @@ function createStyles(colors: ThemeColors) {
   },
   navButton: {
     flex: 1,
-  },
-  signOut: {
-    fontSize: 14,
-    color: colors.muted,
-    textAlign: "center",
-    marginTop: 16,
   },
 });
 }

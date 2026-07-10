@@ -17,6 +17,16 @@ const en = {
   // Tab bar
   "tab.home": "Home",
 
+  // Quick settings drawer
+  "quick.title": "Quick settings",
+  "quick.appearance": "Appearance",
+  "quick.light": "Light",
+  "quick.dark": "Dark",
+  "quick.system": "System",
+  "quick.language": "Language",
+  "quick.fullSettings": "Business settings",
+  "quick.signOut": "Sign out",
+
   // Home
   "home.addNewOrder": "+ Add new order",
   "home.calendar": "Calendar",
@@ -292,6 +302,15 @@ const en = {
 
 const ka: Record<StringKey, string> = {
   "tab.home": "მთავარი",
+
+  "quick.title": "სწრაფი პარამეტრები",
+  "quick.appearance": "იერსახე",
+  "quick.light": "ღია",
+  "quick.dark": "მუქი",
+  "quick.system": "სისტემური",
+  "quick.language": "ენა",
+  "quick.fullSettings": "ბიზნესის პარამეტრები",
+  "quick.signOut": "გასვლა",
 
   "home.addNewOrder": "+ ახალი შეკვეთა",
   "home.calendar": "კალენდარი",
