@@ -172,7 +172,7 @@ export default function CalendarDay() {
         <CalendarFiltersButton />
       </View>
 
-      <Link href={`/jobs/new?date=${date}`} style={styles.addButton}>
+      <Link href={`/jobs?date=${date}`} style={styles.addButton}>
         {t("home.addNewOrder")}
       </Link>
 

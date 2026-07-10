@@ -126,7 +126,7 @@ export default function CalendarMonth() {
         <CalendarFiltersButton />
       </View>
 
-      <Link href="/jobs/new" style={styles.addButton}>
+      <Link href="/jobs" style={styles.addButton}>
         {t("home.addNewOrder")}
       </Link>
 

@@ -14,6 +14,9 @@ export function localeFor(language: Language): string {
 }
 
 const en = {
+  // Tab bar
+  "tab.home": "Home",
+
   // Home
   "home.addNewOrder": "+ Add new order",
   "home.calendar": "Calendar",
@@ -288,6 +291,8 @@ const en = {
 };
 
 const ka: Record<StringKey, string> = {
+  "tab.home": "მთავარი",
+
   "home.addNewOrder": "+ ახალი შეკვეთა",
   "home.calendar": "კალენდარი",
   "home.vehicles": "ავტომობილები",

@@ -278,7 +278,7 @@ export default function VehicleProfile() {
       </View>
 
       <Link
-        href={`/jobs/new?plate=${encodeURIComponent(vehicle.plate_number)}`}
+        href={`/jobs?plate=${encodeURIComponent(vehicle.plate_number)}`}
         style={styles.newOrderButton}
       >
         {t("vehicle.newOrder")}

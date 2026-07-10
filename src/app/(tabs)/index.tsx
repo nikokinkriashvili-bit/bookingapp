@@ -18,7 +18,7 @@ export default function Index() {
   const colors = useThemeColors();
   const styles = useMemo(() => createStyles(colors), [colors]);
   const { session, isLoading: isAuthLoading, signOut } = useAuth();
-  const { business, role, isLoading: isBusinessLoading } = useBusiness();
+  const { business, isLoading: isBusinessLoading } = useBusiness();
   const { language, setLanguage, t } = useLanguage();
 
   if (isAuthLoading || (session && isBusinessLoading)) {
@@ -63,14 +63,6 @@ export default function Index() {
         </View>
       </View>
 
-      <Link href="/jobs/new" style={styles.newJobButton}>
-        {t("home.addNewOrder")}
-      </Link>
-
-      <Link href="/calendar" style={styles.outlineButton}>
-        {t("home.calendar")}
-      </Link>
-
       <View style={styles.navRow}>
         <Link href="/vehicles" style={[styles.outlineButton, styles.navButton]}>
           {t("home.vehicles")}
@@ -78,17 +70,6 @@ export default function Index() {
         <Link href="/customers" style={[styles.outlineButton, styles.navButton]}>
           {t("home.customers")}
         </Link>
-      </View>
-
-      <View style={styles.navRow}>
-        <Link href="/inventory" style={[styles.outlineButton, styles.navButton]}>
-          {t("home.inventory")}
-        </Link>
-        {role === "owner" ? (
-          <Link href="/settings" style={[styles.outlineButton, styles.navButton]}>
-            {t("home.settings")}
-          </Link>
-        ) : null}
       </View>
 
       <DashboardStats />
@@ -150,16 +131,6 @@ function createStyles(colors: ThemeColors) {
     fontSize: 13,
     color: "#fff",
     fontWeight: "600",
-  },
-  newJobButton: {
-    backgroundColor: colors.primary,
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
-    padding: 14,
-    borderRadius: 8,
-    overflow: "hidden",
   },
   outlineButton: {
     backgroundColor: colors.surface,
