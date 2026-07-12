@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Platform } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "@/providers/AuthProvider";
@@ -37,6 +38,19 @@ function AuthGate({ children }: { children: React.ReactNode }) {
 // (light/dark) is applied once here via the Stack's contentStyle.
 function ThemedStack() {
   const colors = useThemeColors();
+
+  // Web only: the Stack's contentStyle colors each screen container but never
+  // reaches <html>/<body>, so the browser's default white shows through any
+  // screen that doesn't paint its own background (login, onboarding, intake,
+  // settings…). Drive the document background from the theme so dark mode is
+  // dark everywhere, not just on buttons. Native uses contentStyle and is fine.
+  useEffect(() => {
+    if (Platform.OS === "web" && typeof document !== "undefined") {
+      document.documentElement.style.backgroundColor = colors.bg;
+      document.body.style.backgroundColor = colors.bg;
+    }
+  }, [colors.bg]);
+
   return (
     <AuthGate>
       <Stack
