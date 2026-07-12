@@ -19,14 +19,20 @@ export function CalendarFiltersButton() {
     toggleStatus,
     toggleService,
     toggleStaff,
+    refresh,
   } = useCalendarFilters();
+
+  const openFilters = () => {
+    refresh();
+    setOpen(true);
+  };
 
   const activeCount =
     excludedStatuses.size + excludedServiceIds.size + excludedStaffIds.size;
 
   return (
     <>
-      <Pressable style={styles.button} onPress={() => setOpen(true)}>
+      <Pressable style={styles.button} onPress={openFilters}>
         <Text style={styles.buttonText}>
           {t("filters.title")}
           {activeCount > 0 ? ` (${activeCount})` : ""}

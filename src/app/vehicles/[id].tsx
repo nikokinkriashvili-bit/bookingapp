@@ -152,7 +152,7 @@ export default function VehicleProfile() {
     .filter((j) => j.status === "paid")
     .reduce((sum, j) => sum + (j.price_total ?? 0), 0);
 
-  const detailRows: Array<{ label: StringKey; value: string }> = [
+  const detailRows: { label: StringKey; value: string }[] = [
     { label: "vehicle.make", value: vehicle.make ?? "—" },
     { label: "vehicle.model", value: vehicle.model ?? "—" },
     { label: "vehicle.year", value: vehicle.year ? String(vehicle.year) : "—" },

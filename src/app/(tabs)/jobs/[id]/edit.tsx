@@ -16,6 +16,8 @@ import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
 import { parseDateAndTime, toDateKey, toTimeString } from "@/lib/calendarDate";
 import { STATUS_ORDER, statusLabelKey, type JobStatus } from "@/lib/jobStatus";
+import { fireStatusSeams } from "@/lib/jobActions";
+import { parseDecimalOr } from "@/lib/number";
 import {
   addJobProduct,
   changeJobProductQty,
@@ -210,16 +212,22 @@ export default function EditJob() {
         status,
         scheduled_slot: scheduledSlot.toISOString(),
         scheduled_end: scheduledEnd.toISOString(),
-        price_total: price.trim() ? Number(price) : 0,
+        price_total: parseDecimalOr(price, 0),
         assigned_staff_id: assignedStaffId,
       })
       .eq("id", job.id);
-    setSubmitting(false);
-
     if (updateError) {
+      setSubmitting(false);
       setError(updateError.message);
       return;
     }
+
+    // Fire the same integration seams the quick day-view flip does, but only
+    // when the status actually changed here.
+    if (status !== job.status) {
+      await fireStatusSeams(job.id, status);
+    }
+    setSubmitting(false);
 
     router.back();
   };

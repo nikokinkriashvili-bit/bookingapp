@@ -17,7 +17,7 @@ import { CalendarFiltersButton } from "@/components/CalendarFiltersButton";
 import { useCalendarFilters } from "@/providers/CalendarFilterProvider";
 import { statusTone, summarizeJobs, type JobStatus } from "@/lib/jobStatus";
 import { localeFor, type StringKey } from "@/lib/i18n";
-import { addDays, addMonths, startOfMonth, toDateKey } from "@/lib/calendarDate";
+import { addDays, addMonths, startOfDay, startOfMonth, toDateKey } from "@/lib/calendarDate";
 
 const WEEKDAY_HEADER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 const MAX_CHIPS_PER_CELL = 6;
@@ -25,6 +25,7 @@ const MAX_CHIPS_PER_CELL = 6;
 type JobRow = {
   status: JobStatus;
   scheduled_slot: string;
+  scheduled_end: string;
   price_total: number | null;
   service_ids: string[] | null;
   assigned_staff_id: string | null;
@@ -50,14 +51,16 @@ export default function CalendarMonth() {
     if (!business) return;
     const rangeStart = mondayOnOrBefore(month);
     const rangeEnd = addDays(rangeStart, 42);
+    // Overlap query so multi-day jobs that start before the visible grid but
+    // run into it are still fetched.
     const { data } = await supabase
       .from("jobs")
       .select(
-        "status, scheduled_slot, price_total, service_ids, assigned_staff_id, vehicles(make, model)"
+        "status, scheduled_slot, scheduled_end, price_total, service_ids, assigned_staff_id, vehicles(make, model)"
       )
       .eq("business_id", business.id)
-      .gte("scheduled_slot", rangeStart.toISOString())
-      .lt("scheduled_slot", rangeEnd.toISOString());
+      .lt("scheduled_slot", rangeEnd.toISOString())
+      .gt("scheduled_end", rangeStart.toISOString());
     setJobs((data as unknown as JobRow[]) ?? []);
     setLoading(false);
   }, [business, month]);
@@ -90,13 +93,21 @@ export default function CalendarMonth() {
 
   const visibleJobs = jobs.filter(isJobVisible);
 
+  // A multi-day job appears on every calendar day it covers.
   const jobsByDate: Record<string, JobRow[]> = {};
   for (const job of visibleJobs) {
-    const key = toDateKey(new Date(job.scheduled_slot));
-    if (!jobsByDate[key]) jobsByDate[key] = [];
-    jobsByDate[key].push(job);
+    let day = startOfDay(new Date(job.scheduled_slot));
+    const lastDay = startOfDay(new Date(job.scheduled_end));
+    while (day <= lastDay) {
+      const key = toDateKey(day);
+      if (!jobsByDate[key]) jobsByDate[key] = [];
+      jobsByDate[key].push(job);
+      day = addDays(day, 1);
+    }
   }
 
+  // Summary stays keyed to each job's start date so a multi-day job is counted
+  // once, not once per day it spans.
   const monthEnd = addMonths(month, 1);
   const jobsInMonth = visibleJobs.filter((j) => {
     const d = new Date(j.scheduled_slot);

@@ -16,6 +16,7 @@ import { useT } from "@/providers/LanguageProvider";
 import { sendWhatsAppMessage } from "@/lib/integrations";
 import { FieldLabel } from "@/components/FieldLabel";
 import { addMinutesToDateTime, parseDateAndTime } from "@/lib/calendarDate";
+import { parseDecimalOr, parseIntOr } from "@/lib/number";
 
 type Vehicle = {
   id: string;
@@ -163,7 +164,6 @@ export default function NewJob() {
       setToDate(suggested.date);
       setToTime(suggested.time);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fromDate, fromTime, totalMinutes, toManuallyEdited]);
 
   const onToDateChange = (v: string) => {
@@ -233,7 +233,7 @@ export default function NewJob() {
           plate_number: trimmedPlate,
           make: make.trim() || null,
           model: model.trim() || null,
-          year: year.trim() ? Number(year) : null,
+          year: year.trim() ? parseIntOr(year, 0) || null : null,
           colour: colour.trim() || null,
           fuel_type: fuelType.trim() || null,
         })
@@ -292,7 +292,7 @@ export default function NewJob() {
         status: "booked",
         scheduled_slot: scheduledSlot.toISOString(),
         scheduled_end: scheduledEnd.toISOString(),
-        price_total: price.trim() ? Number(price) : 0,
+        price_total: parseDecimalOr(price, 0),
         assigned_staff_id: assignedStaffId,
       })
       .select("id")

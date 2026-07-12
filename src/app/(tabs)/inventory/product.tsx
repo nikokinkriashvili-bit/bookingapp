@@ -14,6 +14,7 @@ import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
 import { FieldLabel } from "@/components/FieldLabel";
+import { parseDecimal, parseDecimalOr } from "@/lib/number";
 
 type Supplier = { id: string; name: string };
 
@@ -94,8 +95,8 @@ export default function ProductForm() {
       return;
     }
 
-    const numeric = (v: string) => (v.trim() ? Number(v) : 0);
-    const numericOrNull = (v: string) => (v.trim() ? Number(v) : null);
+    const numeric = (v: string) => parseDecimalOr(v, 0);
+    const numericOrNull = (v: string) => parseDecimal(v);
 
     const values = {
       sku: sku.trim().toUpperCase(),

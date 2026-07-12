@@ -25,7 +25,7 @@ import {
   type JobStatus,
 } from "@/lib/jobStatus";
 import { formatGel, localeFor } from "@/lib/i18n";
-import { generateBogPaymentLink, sendWhatsAppMessage } from "@/lib/integrations";
+import { applyStatusChange } from "@/lib/jobActions";
 import { addDays, fromDateKey, startOfDay, toDateKey } from "@/lib/calendarDate";
 
 type JobRow = {
@@ -69,19 +69,22 @@ export default function CalendarDay() {
   const [jobs, setJobs] = useState<JobRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<JobRow | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const fetchJobs = useCallback(async () => {
     if (!business) return;
-    const dayStart = startOfDay(selectedDate);
+    const dayStart = startOfDay(fromDateKey(date));
     const dayEnd = addDays(dayStart, 1);
+    // Overlap, not just start-in-day: a multi-day job (e.g. Mon→Wed ceramic
+    // coat) must show on every day it covers, including days after it started.
     const { data } = await supabase
       .from("jobs")
       .select(
         "id, status, scheduled_slot, scheduled_end, price_total, service_ids, assigned_staff_id, vehicles(plate_number, make, model), customers(name), staff(name)"
       )
       .eq("business_id", business.id)
-      .gte("scheduled_slot", dayStart.toISOString())
       .lt("scheduled_slot", dayEnd.toISOString())
+      .gt("scheduled_end", dayStart.toISOString())
       .order("scheduled_slot", { ascending: true });
     setJobs((data as unknown as JobRow[]) ?? []);
     setLoading(false);
@@ -113,16 +116,9 @@ export default function CalendarDay() {
 
   const changeStatus = async (jobId: string, newStatus: JobStatus) => {
     setSelectedJob(null);
-    await supabase.from("jobs").update({ status: newStatus }).eq("id", jobId);
-    if (newStatus === "in_progress") {
-      await sendWhatsAppMessage("job_started", jobId);
-    }
-    if (newStatus === "complete") {
-      // TODO(TRD §5.5, §7.2): job-complete WhatsApp + BOG payment link fire
-      // here once steps 9–10 land.
-      await sendWhatsAppMessage("job_complete", jobId);
-      await generateBogPaymentLink(jobId);
-    }
+    setActionError(null);
+    const err = await applyStatusChange(jobId, newStatus);
+    if (err) setActionError(err);
   };
 
   const editOrder = () => {
@@ -177,6 +173,8 @@ export default function CalendarDay() {
       </Link>
 
       <PeriodSummary {...summarizeJobs(visibleJobs)} />
+
+      {actionError ? <Text style={styles.actionError}>{actionError}</Text> : null}
 
       {loading ? (
         <View style={styles.centered}>
@@ -313,6 +311,11 @@ function createStyles(colors: ThemeColors) {
   closedText: {
     fontSize: 16,
     color: colors.muted,
+  },
+  actionError: {
+    color: colors.danger,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
   },
   list: {
     flex: 1,

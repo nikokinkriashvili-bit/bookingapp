@@ -48,8 +48,11 @@ export default function Vehicles() {
         .neq("status", "cancelled"),
     ]).then(([vehiclesResult, jobsResult]) => {
       setVehicles(vehiclesResult.data ?? []);
+      const now = new Date().toISOString();
       const latest = new Map<string, string>();
       for (const job of jobsResult.data ?? []) {
+        // "Last visit" = most recent past job; a future booking isn't a visit.
+        if (job.scheduled_slot > now) continue;
         const existing = latest.get(job.vehicle_id);
         if (!existing || job.scheduled_slot > existing) {
           latest.set(job.vehicle_id, job.scheduled_slot);

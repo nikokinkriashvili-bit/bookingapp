@@ -45,6 +45,8 @@ const en = {
 
   // Onboarding
   "onboarding.title": "Tell us about your business",
+  "onboarding.staffNotice":
+    "Joining a team? Ask the owner to add your email first, then sign in — you don't need to create a business here.",
   "onboarding.businessName": "Business name",
   "onboarding.businessType": "Business type",
   "onboarding.continue": "Continue",
@@ -81,6 +83,7 @@ const en = {
   "common.edit": "Edit",
   "common.save": "Save",
   "common.cancel": "Cancel",
+  "common.remove": "Remove",
   "common.notFound": "Not found.",
   "common.visits": "Visits",
   "common.totalSpend": "Total spend",
@@ -285,6 +288,8 @@ const en = {
   "home.settings": "Settings",
   "settings.title": "Business settings",
   "settings.saved": "Saved.",
+  "settings.whatsapp": "WhatsApp number",
+  "settings.whatsappHint": "Used to message customers once WhatsApp is connected.",
 
   // Staff
   "settings.staff": "Staff",
@@ -295,6 +300,7 @@ const en = {
   "staff.hint":
     "A staff member gets access when they sign up (or log in) with this email.",
   "staff.errorRequired": "Enter a name and email.",
+  "staff.removeConfirm": "Remove this staff member? They'll lose access.",
   "filters.staffSection": "Staff",
   "job.assignee": "Assigned to",
   "job.unassigned": "Unassigned",
@@ -327,6 +333,8 @@ const ka: Record<StringKey, string> = {
   "auth.checkEmail": "შეამოწმეთ ელფოსტა ანგარიშის დასადასტურებლად და შემდეგ შედით.",
 
   "onboarding.title": "მოგვიყევით თქვენი ბიზნესის შესახებ",
+  "onboarding.staffNotice":
+    "უერთდებით გუნდს? სთხოვეთ მფლობელს დაამატოს თქვენი ელფოსტა, შემდეგ შედით — აქ ბიზნესის შექმნა საჭირო არარის.",
   "onboarding.businessName": "ბიზნესის სახელი",
   "onboarding.businessType": "ბიზნესის ტიპი",
   "onboarding.continue": "გაგრძელება",
@@ -361,6 +369,7 @@ const ka: Record<StringKey, string> = {
   "common.edit": "რედაქტირება",
   "common.save": "შენახვა",
   "common.cancel": "გაუქმება",
+  "common.remove": "წაშლა",
   "common.notFound": "ვერ მოიძებნა.",
   "common.visits": "ვიზიტები",
   "common.totalSpend": "სულ გადახდილი",
@@ -547,6 +556,8 @@ const ka: Record<StringKey, string> = {
   "home.settings": "პარამეტრები",
   "settings.title": "ბიზნესის პარამეტრები",
   "settings.saved": "შენახულია.",
+  "settings.whatsapp": "WhatsApp ნომერი",
+  "settings.whatsappHint": "გამოიყენება კლიენტებთან დასაკავშირებლად, როცა WhatsApp ჩაირთვება.",
 
   "settings.staff": "თანამშრომლები",
   "staff.add": "+ თანამშრომლის დამატება",
@@ -556,6 +567,7 @@ const ka: Record<StringKey, string> = {
   "staff.hint":
     "თანამშრომელი წვდომას მიიღებს, როცა ამ ელფოსტით დარეგისტრირდება (ან შევა).",
   "staff.errorRequired": "შეიყვანეთ სახელი და ელფოსტა.",
+  "staff.removeConfirm": "წავშალო ეს თანამშრომელი? ის დაკარგავს წვდომას.",
   "filters.staffSection": "თანამშრომელი",
   "job.assignee": "შემსრულებელი",
   "job.unassigned": "დაუნიშნავი",

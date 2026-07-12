@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -28,6 +29,7 @@ type CalendarFilterContextValue = {
   toggleService: (serviceId: string) => void;
   toggleStaff: (staffId: string) => void;
   isJobVisible: (job: FilterableJob) => boolean;
+  refresh: () => void;
 };
 
 const CalendarFilterContext = createContext<CalendarFilterContextValue | undefined>(
@@ -42,7 +44,7 @@ export function CalendarFilterProvider({ children }: PropsWithChildren) {
   const [excludedServiceIds, setExcludedServiceIds] = useState<Set<string>>(new Set());
   const [excludedStaffIds, setExcludedStaffIds] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
+  const refresh = useCallback(() => {
     if (!business) return;
     supabase
       .from("services")
@@ -56,6 +58,10 @@ export function CalendarFilterProvider({ children }: PropsWithChildren) {
       .order("name")
       .then(({ data }) => setStaff(data ?? []));
   }, [business]);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   const toggleStatus = (status: JobStatus) => {
     setExcludedStatuses((prev) => {
@@ -110,6 +116,7 @@ export function CalendarFilterProvider({ children }: PropsWithChildren) {
         toggleService,
         toggleStaff,
         isJobVisible,
+        refresh,
       }}
     >
       {children}

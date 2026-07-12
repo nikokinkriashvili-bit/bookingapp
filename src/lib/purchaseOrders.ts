@@ -78,17 +78,13 @@ export async function receivePurchaseOrder(
   items: { product_id: string; qty: number }[]
 ): Promise<string | null> {
   for (const item of items) {
-    const { data: product, error: fetchError } = await supabase
-      .from("products")
-      .select("stock_qty")
-      .eq("id", item.product_id)
-      .single();
-    if (fetchError || !product) return fetchError?.message ?? "Product not found.";
-    const { error: stockError } = await supabase
-      .from("products")
-      .update({ stock_qty: Number(product.stock_qty) + Number(item.qty) })
-      .eq("id", item.product_id);
+    // Atomic in-place add (migration 010) — safe against concurrent writers.
+    const { data, error: stockError } = await supabase.rpc("adjust_stock", {
+      p_product_id: item.product_id,
+      p_delta: Number(item.qty),
+    });
     if (stockError) return stockError.message;
+    if (data == null) return "Product not found.";
   }
 
   const { error: statusError } = await supabase

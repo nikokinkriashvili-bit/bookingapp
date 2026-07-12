@@ -16,6 +16,7 @@ import { useBusiness } from "@/providers/BusinessProvider";
 import { useOnboarding } from "@/providers/OnboardingProvider";
 import { useT } from "@/providers/LanguageProvider";
 import { FieldLabel } from "@/components/FieldLabel";
+import { parseDecimal } from "@/lib/number";
 
 export default function ServicesStep() {
   const colors = useThemeColors();
@@ -91,7 +92,7 @@ export default function ServicesStep() {
         business_id: business.id,
         name: s.name.trim(),
         duration_minutes: s.durationMinutes,
-        price_gel: s.priceGel ? Number(s.priceGel) : null,
+        price_gel: parseDecimal(s.priceGel),
       }))
     );
 

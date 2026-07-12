@@ -17,6 +17,8 @@ import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
 import type { StringKey } from "@/lib/i18n";
 import { WEEKDAYS, type Weekday, type WorkingHours } from "@/lib/businessTypes";
+import { parseDecimal, parseIntOr } from "@/lib/number";
+import { confirmAsync } from "@/lib/confirm";
 
 type ServiceEdit = {
   id: string | null; // null = newly added, not yet in the DB
@@ -40,6 +42,7 @@ export default function Settings() {
   const { business, role, refetch } = useBusiness();
 
   const [name, setName] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [hours, setHours] = useState<WorkingHours | null>(null);
   const [services, setServices] = useState<ServiceEdit[]>([]);
   const [deletedServiceIds, setDeletedServiceIds] = useState<string[]>([]);
@@ -69,6 +72,7 @@ export default function Settings() {
     useCallback(() => {
       if (!business) return;
       setName(business.name);
+      setWhatsapp(business.whatsapp_number ?? "");
       setHours(business.working_hours);
       setDeletedServiceIds([]);
       setSaved(false);
@@ -119,7 +123,21 @@ export default function Settings() {
   };
 
   const removeStaff = async (staffId: string) => {
-    await supabase.from("staff").delete().eq("id", staffId);
+    const ok = await confirmAsync(
+      t("staff.removeConfirm"),
+      t("common.remove"),
+      t("common.cancel")
+    );
+    if (!ok) return;
+    setStaffError(null);
+    const { error: deleteError } = await supabase
+      .from("staff")
+      .delete()
+      .eq("id", staffId);
+    if (deleteError) {
+      setStaffError(deleteError.message);
+      return;
+    }
     loadStaff();
   };
 
@@ -168,7 +186,11 @@ export default function Settings() {
 
     const { error: businessError } = await supabase
       .from("businesses")
-      .update({ name: name.trim(), working_hours: hours })
+      .update({
+        name: name.trim(),
+        working_hours: hours,
+        whatsapp_number: whatsapp.trim() || null,
+      })
       .eq("id", business.id);
     if (businessError) {
       setSubmitting(false);
@@ -191,8 +213,8 @@ export default function Settings() {
     for (const service of validServices) {
       const values = {
         name: service.name.trim(),
-        duration_minutes: Number(service.durationMinutes) || 0,
-        price_gel: service.priceGel.trim() ? Number(service.priceGel) : null,
+        duration_minutes: parseIntOr(service.durationMinutes, 0),
+        price_gel: parseDecimal(service.priceGel),
       };
       const { error: serviceError } = service.id
         ? await supabase.from("services").update(values).eq("id", service.id)
@@ -234,6 +256,18 @@ export default function Settings() {
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>{t("onboarding.businessName")}</Text>
         <TextInput style={styles.input} value={name} onChangeText={setName} />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>{t("settings.whatsapp")}</Text>
+        <TextInput
+          style={styles.input}
+          keyboardType="phone-pad"
+          placeholder="+995 5XX XX XX XX"
+          value={whatsapp}
+          onChangeText={setWhatsapp}
+        />
+        <Text style={styles.whatsappHint}>{t("settings.whatsappHint")}</Text>
       </View>
 
       <View style={styles.section}>
@@ -529,6 +563,10 @@ function createStyles(colors: ThemeColors) {
   savedText: {
     color: colors.success,
     fontWeight: "600",
+  },
+  whatsappHint: {
+    fontSize: 12,
+    color: colors.muted,
   },
   staffRow: {
     flexDirection: "row",

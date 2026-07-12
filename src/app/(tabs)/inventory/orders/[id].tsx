@@ -17,6 +17,7 @@ import { useT } from "@/providers/LanguageProvider";
 import { poStatusLabelKey, poStatusTone, type PoStatus } from "@/lib/inventory";
 import { receivePurchaseOrder } from "@/lib/purchaseOrders";
 import { toDateKey } from "@/lib/calendarDate";
+import { parseDecimal, parseDecimalOr } from "@/lib/number";
 
 type Po = {
   id: string;
@@ -96,38 +97,51 @@ export default function PurchaseOrderDetail() {
 
   const isDraft = po?.status === "draft";
 
-  const saveDraft = async () => {
-    if (!po) return;
-    setError(null);
-    setBusy(true);
+  // Writes the in-progress qty/price/delivery edits to the DB. Returns an
+  // error message or null; does not reload or toggle busy, so it can run both
+  // standalone (Save) and as the first step of Mark-sent.
+  const persistDraft = async (): Promise<string | null> => {
+    if (!po) return null;
     for (const item of items) {
-      const qty = Number(qtyEdits[item.id]);
-      const price = priceEdits[item.id]?.trim() ? Number(priceEdits[item.id]) : null;
-      if (isNaN(qty) || qty <= 0) continue;
+      const qty = parseDecimal(qtyEdits[item.id] ?? "");
+      const price = parseDecimal(priceEdits[item.id] ?? "");
+      if (qty == null || qty <= 0) continue;
       const { error: itemError } = await supabase
         .from("purchase_order_items")
         .update({ qty, unit_price: price })
         .eq("id", item.id);
-      if (itemError) {
-        setBusy(false);
-        setError(itemError.message);
-        return;
-      }
+      if (itemError) return itemError.message;
     }
     const { error: poError } = await supabase
       .from("purchase_orders")
       .update({ expected_delivery: expectedDelivery.trim() || null })
       .eq("id", po.id);
+    return poError?.message ?? null;
+  };
+
+  const saveDraft = async () => {
+    if (!po) return;
+    setError(null);
+    setBusy(true);
+    const persistError = await persistDraft();
     setBusy(false);
-    if (poError) {
-      setError(poError.message);
+    if (persistError) {
+      setError(persistError);
       return;
     }
     load();
   };
 
   const removeItem = async (itemId: string) => {
-    await supabase.from("purchase_order_items").delete().eq("id", itemId);
+    setError(null);
+    const { error: deleteError } = await supabase
+      .from("purchase_order_items")
+      .delete()
+      .eq("id", itemId);
+    if (deleteError) {
+      setError(deleteError.message);
+      return;
+    }
     load();
   };
 
@@ -161,6 +175,16 @@ export default function PurchaseOrderDetail() {
     if (!po) return;
     setError(null);
     setBusy(true);
+    // Sending a draft: flush the current qty/price edits first so the order
+    // goes out with what's on screen, not the last-saved values.
+    if (status === "sent" && isDraft) {
+      const persistError = await persistDraft();
+      if (persistError) {
+        setBusy(false);
+        setError(persistError);
+        return;
+      }
+    }
     if (status === "received") {
       const receiveError = await receivePurchaseOrder(
         po.id,
@@ -209,9 +233,9 @@ export default function PurchaseOrderDetail() {
   }
 
   const total = items.reduce((sum, i) => {
-    const qty = isDraft ? Number(qtyEdits[i.id]) || 0 : Number(i.qty);
+    const qty = isDraft ? parseDecimalOr(qtyEdits[i.id] ?? "", 0) : Number(i.qty);
     const price = isDraft
-      ? Number(priceEdits[i.id]) || 0
+      ? parseDecimalOr(priceEdits[i.id] ?? "", 0)
       : Number(i.unit_price ?? 0);
     return sum + qty * price;
   }, 0);

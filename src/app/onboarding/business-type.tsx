@@ -76,6 +76,8 @@ export default function BusinessTypeStep() {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{t("onboarding.title")}</Text>
 
+      <Text style={styles.staffNotice}>{t("onboarding.staffNotice")}</Text>
+
       <FieldLabel>{t("onboarding.businessName")}</FieldLabel>
       <TextInput
         style={styles.input}
@@ -137,6 +139,13 @@ function createStyles(colors: ThemeColors) {
     fontWeight: "600",
     marginTop: 12,
     color: colors.inkSoft,
+  },
+  staffNotice: {
+    fontSize: 13,
+    color: colors.muted,
+    backgroundColor: colors.primaryFaint,
+    borderRadius: 8,
+    padding: 12,
   },
   input: {
     color: colors.ink,

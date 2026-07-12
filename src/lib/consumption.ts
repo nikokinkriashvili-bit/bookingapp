@@ -5,17 +5,14 @@ import { supabase } from "@/lib/supabase";
 // status changes never touch stock and can't double-count it.
 
 async function adjustStock(productId: string, delta: number): Promise<string | null> {
-  const { data: product, error: fetchError } = await supabase
-    .from("products")
-    .select("stock_qty")
-    .eq("id", productId)
-    .single();
-  if (fetchError || !product) return fetchError?.message ?? "Product not found.";
-  const { error: updateError } = await supabase
-    .from("products")
-    .update({ stock_qty: Number(product.stock_qty) + delta })
-    .eq("id", productId);
-  return updateError?.message ?? null;
+  // Atomic in-place add (migration 010) — safe against concurrent writers.
+  const { data, error } = await supabase.rpc("adjust_stock", {
+    p_product_id: productId,
+    p_delta: delta,
+  });
+  if (error) return error.message;
+  if (data == null) return "Product not found.";
+  return null;
 }
 
 export async function addJobProduct(
