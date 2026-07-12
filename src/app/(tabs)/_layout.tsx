@@ -23,6 +23,14 @@ export default function TabsLayout() {
           backgroundColor: colors.surface,
           borderTopColor: colors.line,
         },
+        // The Tabs navigator's scene container has its own default background,
+        // separate from the parent Stack's contentStyle -- without this, every
+        // screen inside the tab group (Home, Calendar, Inventory, Settings,
+        // +New) stayed white in dark mode even though the Stack-level fix and
+        // the tab bar chrome itself were both correctly themed.
+        sceneStyle: {
+          backgroundColor: colors.bg,
+        },
       }}
     >
       <Tabs.Screen
