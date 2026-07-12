@@ -30,6 +30,14 @@ Job status colors are semantic and live in `src/lib/jobStatus.ts`
 gray cancelled). Status color appears as a card's left border or a small dot —
 never as a full card fill.
 
+**Dark mode is light/dark/system** (manual override in the quick-settings
+drawer). Screens resolve colors via `useThemeColors()`. **Web gotcha:** the
+Stack's `contentStyle` colors screen containers but never `<html>`/`<body>`, so
+on web the document background is driven from the theme in `app/_layout.tsx`
+(`document.body.style.backgroundColor = colors.bg`). Without it, screens that
+don't paint their own background show the browser's default white even in dark
+mode. Native relies on `contentStyle` and needs no such step.
+
 ## Typography
 
 System font. Scale:
