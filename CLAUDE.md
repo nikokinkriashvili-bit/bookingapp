@@ -20,7 +20,7 @@ Git is initialized and pushed to [github.com/nikokinkriashvili-bit/bookingapp](h
 - **Manual theme override + quick-settings drawer (confirmed with Niko, deviates from the guidance doc's "system-follow only, no toggle"):** `ThemeProvider` now supports light/dark/system, persisted. A floating icon (`components/QuickSettingsButton.tsx`, rendered once at the root so it reaches every screen incl. ones pushed outside `(tabs)`) opens `QuickSettingsDrawer` — theme mode, language, a link to the full `/settings` page (owner-only), and sign out. The full Settings page (business name/hours/services/staff) deliberately stayed a page, not a sidebar — too many dense forms (7-day hours, staff CRUD) for a slide-out panel on a 375px phone; only the lightweight prefs moved into the drawer.
 - Integration seams: `src/lib/integrations.ts` has inert `sendWhatsAppMessage` / `generateBogPaymentLink` placeholders with `TODO(TRD §…)` markers, called from job creation and status changes — these become real at roadmap steps 9–10.
 
-**Not built yet:** WhatsApp integration, BOG payments, post-onboarding business settings (edit hours/services). Migrations must be run manually in the Supabase SQL Editor — Claude has no DB access.
+**Not built yet:** WhatsApp integration, BOG payments (both seams-only until ROADMAP.md Stage 6). Migrations must be run manually in the Supabase SQL Editor — Claude has no DB access.
 
 **Testing surfaces:** localhost web preview + Vercel. Phone testing via Expo Go has been blocked by firewall/tunnel issues on this machine — design mobile-first and verify at ~375px width in the web preview.
 
@@ -41,7 +41,7 @@ When building or reworking UI, apply the `frontend-design` skill's principles (i
 
 ## What this project is
 
-A booking/scheduling app for car detailing businesses in Georgia (the country), built for Carbros' own detailing operation and a small pilot group of Carbros-network detailers — not a cold public launch. **The standing spec is `BookingApp_TRD_v2_FullScope.md`** (supersedes v1; full BRD scope, phased). Read it in full before implementation work. Note it slightly trails reality: its roadmap items 6–9 are built, and the stock-management module (built at Niko's explicit direction, see roadmap below) isn't reflected in it. Where v2 and this file disagree on build status, this file wins; on product intent, v2 wins. The InvoiceGE BRD (`InvoiceGE_BRD_v4_final.docx`) is background context. A separate importer-module TRD is being drafted by Niko (in Cowork) for the wholesaler/importer side detail.
+A booking/scheduling app for car detailing businesses in Georgia (the country), built for Carbros' own detailing operation and a small pilot group of Carbros-network detailers — not a cold public launch. **The standing spec is `BookingApp_TRD_v2_FullScope.md`** (supersedes v1; full BRD scope, phased). Read it in full before implementation work. Note it slightly trails reality: its roadmap items 6–9 are built, and the stock-management module (built at Niko's explicit direction, see roadmap below) isn't reflected in it. Where v2 and this file disagree on build status, this file wins; on product intent, v2 wins. The InvoiceGE BRD (`InvoiceGE_BRD_v4_final.docx`) is background context. A separate importer-module TRD is being drafted by Niko (in Cowork) for the wholesaler/importer side detail — feature proposals and the open decisions for it are pre-drafted in [IMPORTER_MODULE_PLAN.md](IMPORTER_MODULE_PLAN.md).
 
 ## Tech stack (decided)
 
@@ -97,6 +97,15 @@ These deliberately diverge from the original TRD text. They were made with Niko 
    c. ~~Landed cost / COGS calculator~~ **deferred (confirmed with Niko, July 2026):** POs are quantity-first for now — all internal operations are GEL, and FX/landed cost only matters for the importer side, which Niko will spec in a separate importer-module TRD (drafting it in Cowork). The nullable landed-cost columns in migration 006 stay dormant until then; don't build against them.
    d. ~~Shop tier: product consumption per job + §6.6 loop~~ ✅ (migration 007: job_products, business_directory view, linked-supplier RLS fix via security-definer function, name/SKU snapshot on PO items. Stock adjusts when consumption is logged, NOT on job status change — deliberate, prevents double-counting. Incoming-orders queue is read-only; fulfilment pipeline states wait for Niko's importer TRD.)
 10. ~~Remaining gaps: business settings screen + catalog Georgian names migration~~ ✅ (migration 008 adds `label_ka`/`name_ka`; onboarding seeds service names in the active language; `/settings` edits name/hours/services; language toggle also on login)
+10b. ~~System audit fixes (July 2026)~~ ✅ — a full bug/wiring audit surfaced a fix backlog, all applied:
+    - **migration 010**: atomic `adjust_stock(product_id, delta)` RPC (replaces client read-then-write in `consumption.ts`/`purchaseOrders.ts` — safe now that staff can write concurrently) + `one_draft_po_per_supplier` partial unique index.
+    - PO **Mark-sent** now flushes on-screen qty/price edits before the status flip (was sending stale values).
+    - Calendar **month + day views** query jobs by **overlap** (`scheduled_slot < end AND scheduled_end > start`), so multi-day jobs show on every day they cover, not just their start day. Month grid renders the job on each spanned cell; the GEL summary stays keyed to start date so it isn't double-counted.
+    - **`src/lib/number.ts`** `parseDecimal`/`parseDecimalOr`/`parseIntOr` — comma-decimal-safe number parsing (Georgian keyboards produce `12,50`), applied to every numeric input (intake, edit, product, PO, settings, onboarding).
+    - **`src/lib/jobActions.ts`** `applyStatusChange`/`fireStatusSeams` — one place that maps a status change to its WhatsApp/BOG seams; both the day-view quick flip and the edit screen route through it (edit screen previously fired no seams), and `paid` now fires `payment_confirmed`.
+    - Error surfacing + confirm on destructive actions: day-view status change, staff removal (with `confirmAsync` cross-platform confirm in `src/lib/confirm.ts`), PO item removal.
+    - **WhatsApp number** field added to `/settings` (the `businesses.whatsapp_number` column was previously unreachable from any screen).
+    - Vehicles list "last visit" ignores future bookings; calendar filter lists refresh when the filter modal opens; onboarding shows a "joining a team? ask your owner to add your email" notice.
 11. **User-feedback backlog (July 2026, Niko approved building in this order):**
     a. ~~Staff accounts + job assignment~~ ✅ (migration 009: staff table, member-based RLS rewrite, email-claim linking; assignee picker on intake/edit; assignee on day cards; staff calendar filter; staff roster in /settings, owner-only)
     b. Photo capture + before/after gallery on vehicle profile (storage seam: Supabase Storage now, R2 later)
@@ -109,6 +118,8 @@ These deliberately diverge from the original TRD text. They were made with Niko 
     i. Repeat-last-order shortcut
 12. WhatsApp integration · 13. BOG payments · 14. NBG rate fetch (all Phase 1b, per TRD v2 seam strategy)
 15. Internal pilot with Carbros + network detailers
+
+**The step-by-step execution plan is [ROADMAP.md](ROADMAP.md)** — the single ordered checklist from here to pilot; work it top to bottom and check items off there. It supersedes the roadmap phases in TECHNICAL_AUDIT.md. Supporting analysis: [TECHNICAL_AUDIT.md](TECHNICAL_AUDIT.md) (system gap analysis) and the specialist audits in [audits/](audits/) (security/data-integrity incl. the migration 011 spec, intake speed, performance, accessibility, localization, cost/scaling).
 
 ## Non-functional constraints
 
