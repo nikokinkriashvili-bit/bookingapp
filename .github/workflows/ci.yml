@@ -1,0 +1,33 @@
+name: CI
+
+# Runs the full local verification gate on every push to master and every PR,
+# so a broken commit is caught before Vercel deploys it (ROADMAP.md Stage 1.1).
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm test
+      - name: Web export (build smoke test)
+        run: npx expo export --platform web
+        env:
+          # Placeholders — the client only requires these to be defined at build
+          # time (createClient doesn't validate them). Real values live in
+          # Vercel's env, not here. The anon key is public by design anyway.
+          EXPO_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ci-build-placeholder
