@@ -17,13 +17,13 @@ Work top to bottom. Check items off here (`[ ]` → `[x]`, add the date). Each s
 - [ ] **0.2** 🖐 Run `supabase/010_atomic_stock.sql` in the Supabase SQL Editor. *Done = both statements succeed (see the file's note if the unique index fails).*
 - [ ] **0.3** 🖐 Two dashboard checks (5 min): Auth → email confirmation is **ON**; Database → note current backup settings. Record both in `audits/security-data-integrity.md` (S3 checkbox).
 
-## Stage 1 — Safety net *(CI + tests before any new features)*
+## Stage 1 — Safety net ✅ *(complete July 2026)*
 
-- [ ] **1.1** ⚙️ GitHub Actions workflow: `tsc --noEmit` + `expo lint` + `expo export --platform web` on every push/PR. *Done = a red X appears on a deliberately broken test push.*
-- [ ] **1.2** ⚙️ Jest (`jest-expo`) + unit tests for the five pure-logic modules: `inventory` (reorder math), `consumption` (delta logic, mocked rpc), `calendarDate`, `number` (comma cases), `jobStatus` (summaries). Add `jest` to the CI workflow. *Done = ~40+ assertions, CI green.*
-- [ ] **1.3** ⚙️ Root error boundary with a bilingual "something went wrong — reload" screen.
-- [ ] **1.4** ⚙️ Auth gate in the root layout: signed-out users deep-linking anywhere get `/login` (keep `/login`, `/sign-up` public; leave room for the future public booking route).
-- [ ] **1.5** ⚙️ Error-vs-empty states on list screens: failed fetches show a banner + retry, not an empty list (calendar, vehicles, customers, inventory, POs, dashboard).
+- [x] **1.1** ⚙️ GitHub Actions workflow: typecheck + lint + **test** + web export on every push/PR (`.github/workflows/ci.yml`).
+- [x] **1.2** ⚙️ Jest (`jest-expo`) + 38 unit tests across `number`, `calendarDate`, `inventory`, `jobStatus`, `consumption` (Supabase mocked). `npm test` in CI.
+- [x] **1.3** ⚙️ Root error boundary — self-contained bilingual reload screen (`RootErrorBoundary`, exported from `app/_layout.tsx`).
+- [x] **1.4** ⚙️ Auth gate in the root layout: signed-out deep links → `/login` (login/sign-up public); verified `/vehicles` → login.
+- [x] **1.5** ⚙️ Error-vs-empty states: failed fetches show a retry banner (`FetchError`) on calendar month+day, vehicles, customers, inventory, POs, dashboard.
 
 ## Stage 2 — Database integrity *(one migration, one session)*
 
@@ -95,4 +95,6 @@ Every box in Stages 0–3 and 7, plus 4.1–4.4 + 4.6–4.8, plus 6.1–6.3, che
 
 | Date | Step(s) | Notes |
 |---|---|---|
-| July 2026 | Audits complete | Bug audit fixes built (Stage 0 pending commit); 6 specialist audits in `audits/` |
+| July 2026 | Audits complete | Bug audit fixes built; 6 specialist audits + feature-gap analysis in `audits/` |
+| July 2026 | Stage 0 ✅ | Audit fixes committed + pushed (88a413d); migration 010 run by Niko |
+| July 2026 | Stage 1 ✅ | CI + 38 unit tests, error boundary, auth gate, error-vs-empty states (03b3efb, c134b77, e94c1de) |
