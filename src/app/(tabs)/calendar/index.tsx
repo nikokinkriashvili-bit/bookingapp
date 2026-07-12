@@ -14,6 +14,7 @@ import { useBusiness } from "@/providers/BusinessProvider";
 import { useLanguage } from "@/providers/LanguageProvider";
 import { PeriodSummary } from "@/components/PeriodSummary";
 import { CalendarFiltersButton } from "@/components/CalendarFiltersButton";
+import { FetchError } from "@/components/FetchError";
 import { useCalendarFilters } from "@/providers/CalendarFilterProvider";
 import { statusTone, summarizeJobs, type JobStatus } from "@/lib/jobStatus";
 import { localeFor, type StringKey } from "@/lib/i18n";
@@ -46,14 +47,16 @@ export default function CalendarMonth() {
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
   const [jobs, setJobs] = useState<JobRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   const fetchJobs = useCallback(async () => {
     if (!business) return;
+    setError(false);
     const rangeStart = mondayOnOrBefore(month);
     const rangeEnd = addDays(rangeStart, 42);
     // Overlap query so multi-day jobs that start before the visible grid but
     // run into it are still fetched.
-    const { data } = await supabase
+    const { data, error: fetchError } = await supabase
       .from("jobs")
       .select(
         "status, scheduled_slot, scheduled_end, price_total, service_ids, assigned_staff_id, vehicles(make, model)"
@@ -61,6 +64,11 @@ export default function CalendarMonth() {
       .eq("business_id", business.id)
       .lt("scheduled_slot", rangeEnd.toISOString())
       .gt("scheduled_end", rangeStart.toISOString());
+    if (fetchError) {
+      setError(true);
+      setLoading(false);
+      return;
+    }
     setJobs((data as unknown as JobRow[]) ?? []);
     setLoading(false);
   }, [business, month]);
@@ -155,6 +163,8 @@ export default function CalendarMonth() {
         <View style={styles.centered}>
           <ActivityIndicator />
         </View>
+      ) : error ? (
+        <FetchError onRetry={fetchJobs} />
       ) : (
         <ScrollView>
           <View style={styles.grid}>

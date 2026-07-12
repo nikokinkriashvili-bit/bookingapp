@@ -14,6 +14,7 @@ import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
 import { poStatusLabelKey, poStatusTone, type PoStatus } from "@/lib/inventory";
 import { toDateKey } from "@/lib/calendarDate";
+import { FetchError } from "@/components/FetchError";
 
 type PoRow = {
   id: string;
@@ -31,20 +32,39 @@ export default function PurchaseOrders() {
   const t = useT();
   const { business } = useBusiness();
   const [orders, setOrders] = useState<PoRow[] | null>(null);
+  const [error, setError] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!business) return;
+    setError(false);
+    const { data, error: fetchError } = await supabase
+      .from("purchase_orders")
+      .select(
+        "id, status, currency, expected_delivery, created_at, suppliers(name), purchase_order_items(qty, unit_price)"
+      )
+      .eq("business_id", business.id)
+      .order("created_at", { ascending: false });
+    if (fetchError) {
+      setError(true);
+      return;
+    }
+    setOrders((data as unknown as PoRow[]) ?? []);
+  }, [business]);
 
   useFocusEffect(
     useCallback(() => {
-      if (!business) return;
-      supabase
-        .from("purchase_orders")
-        .select(
-          "id, status, currency, expected_delivery, created_at, suppliers(name), purchase_order_items(qty, unit_price)"
-        )
-        .eq("business_id", business.id)
-        .order("created_at", { ascending: false })
-        .then(({ data }) => setOrders((data as unknown as PoRow[]) ?? []));
-    }, [business])
+      load();
+    }, [load])
   );
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>{t("po.title")}</Text>
+        <FetchError onRetry={load} />
+      </View>
+    );
+  }
 
   if (!orders) {
     return (

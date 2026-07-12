@@ -15,6 +15,7 @@ import { useBusiness } from "@/providers/BusinessProvider";
 import { useLanguage } from "@/providers/LanguageProvider";
 import { PeriodSummary } from "@/components/PeriodSummary";
 import { CalendarFiltersButton } from "@/components/CalendarFiltersButton";
+import { FetchError } from "@/components/FetchError";
 import { useCalendarFilters } from "@/providers/CalendarFilterProvider";
 import type { Weekday } from "@/lib/businessTypes";
 import {
@@ -70,14 +71,16 @@ export default function CalendarDay() {
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<JobRow | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   const fetchJobs = useCallback(async () => {
     if (!business) return;
+    setLoadError(false);
     const dayStart = startOfDay(fromDateKey(date));
     const dayEnd = addDays(dayStart, 1);
     // Overlap, not just start-in-day: a multi-day job (e.g. Mon→Wed ceramic
     // coat) must show on every day it covers, including days after it started.
-    const { data } = await supabase
+    const { data, error: fetchError } = await supabase
       .from("jobs")
       .select(
         "id, status, scheduled_slot, scheduled_end, price_total, service_ids, assigned_staff_id, vehicles(plate_number, make, model), customers(name), staff(name)"
@@ -86,6 +89,11 @@ export default function CalendarDay() {
       .lt("scheduled_slot", dayEnd.toISOString())
       .gt("scheduled_end", dayStart.toISOString())
       .order("scheduled_slot", { ascending: true });
+    if (fetchError) {
+      setLoadError(true);
+      setLoading(false);
+      return;
+    }
     setJobs((data as unknown as JobRow[]) ?? []);
     setLoading(false);
   }, [business, date]);
@@ -180,6 +188,8 @@ export default function CalendarDay() {
         <View style={styles.centered}>
           <ActivityIndicator />
         </View>
+      ) : loadError ? (
+        <FetchError onRetry={fetchJobs} />
       ) : isClosed ? (
         <View style={styles.centered}>
           <Text style={styles.closedText}>{t("common.closed")}</Text>

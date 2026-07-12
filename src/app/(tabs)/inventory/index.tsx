@@ -23,6 +23,7 @@ import {
   type StockStatus,
 } from "@/lib/inventory";
 import { draftPurchaseOrder } from "@/lib/purchaseOrders";
+import { FetchError } from "@/components/FetchError";
 
 type ProductRow = {
   id: string;
@@ -56,27 +57,36 @@ export default function InventoryDashboard() {
   const [search, setSearch] = useState("");
   const [draftingId, setDraftingId] = useState<string | null>(null);
   const [draftError, setDraftError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!business) return;
+    setLoadError(false);
+    const [productsResult, suppliersResult] = await Promise.all([
+      supabase
+        .from("products")
+        .select(
+          "id, sku, name, stock_qty, sales_per_week, safety_stock, lead_time_days_override, supplier_id, purchase_price"
+        )
+        .eq("business_id", business.id)
+        .order("name"),
+      supabase
+        .from("suppliers")
+        .select("id, lead_time_days, moq")
+        .eq("business_id", business.id),
+    ]);
+    if (productsResult.error || suppliersResult.error) {
+      setLoadError(true);
+      return;
+    }
+    setProducts(productsResult.data ?? []);
+    setSuppliers(new Map((suppliersResult.data ?? []).map((s) => [s.id, s])));
+  }, [business]);
 
   useFocusEffect(
     useCallback(() => {
-      if (!business) return;
-      Promise.all([
-        supabase
-          .from("products")
-          .select(
-            "id, sku, name, stock_qty, sales_per_week, safety_stock, lead_time_days_override, supplier_id, purchase_price"
-          )
-          .eq("business_id", business.id)
-          .order("name"),
-        supabase
-          .from("suppliers")
-          .select("id, lead_time_days, moq")
-          .eq("business_id", business.id),
-      ]).then(([productsResult, suppliersResult]) => {
-        setProducts(productsResult.data ?? []);
-        setSuppliers(new Map((suppliersResult.data ?? []).map((s) => [s.id, s])));
-      });
-    }, [business])
+      load();
+    }, [load])
   );
 
   const rows = useMemo(() => {
@@ -110,6 +120,15 @@ export default function InventoryDashboard() {
           a.product.name.localeCompare(b.product.name)
       );
   }, [products, suppliers, search]);
+
+  if (loadError) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>{t("inv.title")}</Text>
+        <FetchError onRetry={load} />
+      </View>
+    );
+  }
 
   if (!rows) {
     return (

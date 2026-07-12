@@ -7,6 +7,7 @@ import { useT } from "@/providers/LanguageProvider";
 import { statusTone } from "@/lib/jobStatus";
 import { formatGel } from "@/lib/i18n";
 import { addMonths, startOfMonth } from "@/lib/calendarDate";
+import { FetchError } from "@/components/FetchError";
 
 type Stats = {
   carsServiced: number;
@@ -23,9 +24,11 @@ export function DashboardStats() {
   const t = useT();
   const { business } = useBusiness();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [error, setError] = useState(false);
 
   const fetchStats = useCallback(async () => {
     if (!business) return;
+    setError(false);
 
     const now = new Date();
     const prevMonthStart = addMonths(startOfMonth(now), -1);
@@ -40,6 +43,11 @@ export function DashboardStats() {
         .lt("scheduled_slot", prevMonthEnd.toISOString()),
       supabase.from("jobs").select("status, price_total").eq("business_id", business.id),
     ]);
+
+    if (prevMonthResult.error || allTimeResult.error) {
+      setError(true);
+      return;
+    }
 
     const prevMonthJobs = prevMonthResult.data ?? [];
     const allJobs = allTimeResult.data ?? [];
@@ -83,6 +91,7 @@ export function DashboardStats() {
     };
   }, [business, fetchStats]);
 
+  if (error) return <FetchError onRetry={fetchStats} />;
   if (!stats) return null;
 
   const successTone = statusTone(colors, "complete");

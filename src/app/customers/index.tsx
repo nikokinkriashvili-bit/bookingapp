@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "expo-router";
 import {
   ActivityIndicator,
@@ -13,6 +13,7 @@ import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
+import { FetchError } from "@/components/FetchError";
 
 type CustomerRow = {
   id: string;
@@ -28,16 +29,26 @@ export default function Customers() {
 
   const [customers, setCustomers] = useState<CustomerRow[] | null>(null);
   const [search, setSearch] = useState("");
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!business) return;
-    supabase
+    setError(false);
+    const { data, error: fetchError } = await supabase
       .from("customers")
       .select("id, name, phone")
       .eq("business_id", business.id)
-      .order("name")
-      .then(({ data }) => setCustomers(data ?? []));
+      .order("name");
+    if (fetchError) {
+      setError(true);
+      return;
+    }
+    setCustomers(data ?? []);
   }, [business]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const filtered = useMemo(() => {
     if (!customers) return null;
@@ -47,6 +58,15 @@ export default function Customers() {
       (c) => c.name.toLowerCase().includes(q) || c.phone.includes(q)
     );
   }, [customers, search]);
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>{t("customers.title")}</Text>
+        <FetchError onRetry={load} />
+      </View>
+    );
+  }
 
   if (!filtered) {
     return (

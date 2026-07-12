@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "expo-router";
 import {
   ActivityIndicator,
@@ -14,6 +14,7 @@ import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
 import { PlateChip } from "@/components/PlateChip";
+import { FetchError } from "@/components/FetchError";
 import { toDateKey } from "@/lib/calendarDate";
 
 type VehicleRow = {
@@ -32,10 +33,12 @@ export default function Vehicles() {
   const [vehicles, setVehicles] = useState<VehicleRow[] | null>(null);
   const [lastVisit, setLastVisit] = useState<Map<string, string>>(new Map());
   const [search, setSearch] = useState("");
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!business) return;
-    Promise.all([
+    setError(false);
+    const [vehiclesResult, jobsResult] = await Promise.all([
       supabase
         .from("vehicles")
         .select("id, plate_number, make, model")
@@ -46,21 +49,28 @@ export default function Vehicles() {
         .select("vehicle_id, scheduled_slot")
         .eq("business_id", business.id)
         .neq("status", "cancelled"),
-    ]).then(([vehiclesResult, jobsResult]) => {
-      setVehicles(vehiclesResult.data ?? []);
-      const now = new Date().toISOString();
-      const latest = new Map<string, string>();
-      for (const job of jobsResult.data ?? []) {
-        // "Last visit" = most recent past job; a future booking isn't a visit.
-        if (job.scheduled_slot > now) continue;
-        const existing = latest.get(job.vehicle_id);
-        if (!existing || job.scheduled_slot > existing) {
-          latest.set(job.vehicle_id, job.scheduled_slot);
-        }
+    ]);
+    if (vehiclesResult.error) {
+      setError(true);
+      return;
+    }
+    setVehicles(vehiclesResult.data ?? []);
+    const now = new Date().toISOString();
+    const latest = new Map<string, string>();
+    for (const job of jobsResult.data ?? []) {
+      // "Last visit" = most recent past job; a future booking isn't a visit.
+      if (job.scheduled_slot > now) continue;
+      const existing = latest.get(job.vehicle_id);
+      if (!existing || job.scheduled_slot > existing) {
+        latest.set(job.vehicle_id, job.scheduled_slot);
       }
-      setLastVisit(latest);
-    });
+    }
+    setLastVisit(latest);
   }, [business]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const filtered = useMemo(() => {
     if (!vehicles) return null;
@@ -68,6 +78,15 @@ export default function Vehicles() {
     if (!q) return vehicles;
     return vehicles.filter((v) => v.plate_number.includes(q));
   }, [vehicles, search]);
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>{t("vehicles.title")}</Text>
+        <FetchError onRetry={load} />
+      </View>
+    );
+  }
 
   if (!filtered) {
     return (
