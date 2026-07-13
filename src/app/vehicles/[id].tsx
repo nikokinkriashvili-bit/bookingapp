@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, router, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -9,15 +10,25 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Image } from "expo-image";
 import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
 import { PlateChip } from "@/components/PlateChip";
 import { FieldLabel } from "@/components/FieldLabel";
+import { FetchError } from "@/components/FetchError";
 import { formatGel, type StringKey } from "@/lib/i18n";
 import { toDateKey } from "@/lib/calendarDate";
 import { statusTone, type JobStatus } from "@/lib/jobStatus";
+import { confirmAsync } from "@/lib/confirm";
+import {
+  captureVehiclePhoto,
+  deleteVehiclePhoto,
+  listVehiclePhotos,
+  type PhotoKind,
+  type VehiclePhoto,
+} from "@/lib/vehiclePhotos";
 
 type Vehicle = {
   id: string;
@@ -51,6 +62,12 @@ export default function VehicleProfile() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [serviceNames, setServiceNames] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
+
+  const [photos, setPhotos] = useState<(VehiclePhoto & { url: string | null })[]>([]);
+  const [photosError, setPhotosError] = useState(false);
+  const [addingKind, setAddingKind] = useState<PhotoKind | null>(null);
+  const [busyKind, setBusyKind] = useState<PhotoKind | null>(null);
+  const [photoActionError, setPhotoActionError] = useState<string | null>(null);
 
   const [editing, setEditing] = useState(false);
   const [make, setMake] = useState("");
@@ -96,6 +113,57 @@ export default function VehicleProfile() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const loadPhotos = useCallback(async () => {
+    if (!id) return;
+    setPhotosError(false);
+    const { photos: rows, error: fetchError } = await listVehiclePhotos(id);
+    if (fetchError) {
+      setPhotosError(true);
+      return;
+    }
+    setPhotos(rows);
+  }, [id]);
+
+  useEffect(() => {
+    loadPhotos();
+  }, [loadPhotos]);
+
+  const onPickSource = async (source: "camera" | "library") => {
+    if (!business || !id || !addingKind) return;
+    const kind = addingKind;
+    setAddingKind(null);
+    setPhotoActionError(null);
+    setBusyKind(kind);
+    const { error: captureError } = await captureVehiclePhoto({
+      source,
+      businessId: business.id,
+      vehicleId: id,
+      kind,
+    });
+    setBusyKind(null);
+    if (captureError) {
+      setPhotoActionError(captureError);
+      return;
+    }
+    loadPhotos();
+  };
+
+  const onDeletePhoto = async (photo: VehiclePhoto) => {
+    const ok = await confirmAsync(
+      t("vehicle.deletePhotoConfirm"),
+      t("common.remove"),
+      t("common.cancel")
+    );
+    if (!ok) return;
+    setPhotoActionError(null);
+    const deleteError = await deleteVehiclePhoto(photo.id, photo.storage_path);
+    if (deleteError) {
+      setPhotoActionError(deleteError);
+      return;
+    }
+    loadPhotos();
+  };
 
   const startEditing = () => {
     if (!vehicle) return;
@@ -247,6 +315,64 @@ export default function VehicleProfile() {
       ) : null}
 
       <View style={styles.section}>
+        <Text style={styles.sectionLabel}>{t("vehicle.photos")}</Text>
+        {photosError ? (
+          <FetchError onRetry={loadPhotos} />
+        ) : (
+          <>
+            {(["before", "after"] as const).map((kind) => {
+              const kindPhotos = photos.filter((p) => p.kind === kind);
+              return (
+                <View key={kind} style={styles.photoGroup}>
+                  <Text style={styles.photoGroupLabel}>
+                    {t(kind === "before" ? "vehicle.photosBefore" : "vehicle.photosAfter")}
+                  </Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <View style={styles.photoRow}>
+                      {kindPhotos.map((photo) => (
+                        <Pressable
+                          key={photo.id}
+                          style={styles.photoThumbWrap}
+                          onLongPress={() => onDeletePhoto(photo)}
+                        >
+                          {photo.url ? (
+                            <Image
+                              source={{ uri: photo.url }}
+                              style={styles.photoThumb}
+                              contentFit="cover"
+                            />
+                          ) : (
+                            <View style={[styles.photoThumb, styles.photoThumbFallback]} />
+                          )}
+                        </Pressable>
+                      ))}
+                      <Pressable
+                        style={styles.photoAddThumb}
+                        disabled={busyKind !== null}
+                        onPress={() => setAddingKind(kind)}
+                      >
+                        {busyKind === kind ? (
+                          <ActivityIndicator size="small" color={colors.primary} />
+                        ) : (
+                          <Text style={styles.photoAddThumbText}>
+                            {t(kind === "before" ? "vehicle.addBeforePhoto" : "vehicle.addAfterPhoto")}
+                          </Text>
+                        )}
+                      </Pressable>
+                    </View>
+                  </ScrollView>
+                </View>
+              );
+            })}
+            {photos.length === 0 ? (
+              <Text style={styles.empty}>{t("vehicle.noPhotos")}</Text>
+            ) : null}
+            {photoActionError ? <Text style={styles.error}>{photoActionError}</Text> : null}
+          </>
+        )}
+      </View>
+
+      <View style={styles.section}>
         <Text style={styles.sectionLabel}>{t("vehicle.serviceHistory")}</Text>
         {jobs.length === 0 ? (
           <Text style={styles.empty}>{t("vehicle.noHistory")}</Text>
@@ -283,6 +409,29 @@ export default function VehicleProfile() {
       >
         {t("vehicle.newOrder")}
       </Link>
+
+      <Modal
+        visible={addingKind !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAddingKind(null)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setAddingKind(null)}>
+          <View style={styles.modalContent}>
+            <Pressable style={styles.modalOption} onPress={() => onPickSource("camera")}>
+              <Text style={styles.modalOptionText}>{t("vehicle.photoSourceCamera")}</Text>
+            </Pressable>
+            <Pressable style={styles.modalOption} onPress={() => onPickSource("library")}>
+              <Text style={styles.modalOptionText}>{t("vehicle.photoSourceLibrary")}</Text>
+            </Pressable>
+            <Pressable style={styles.modalOption} onPress={() => setAddingKind(null)}>
+              <Text style={[styles.modalOptionText, { color: colors.danger }]}>
+                {t("common.cancel")}
+              </Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 }
@@ -467,6 +616,69 @@ function createStyles(colors: ThemeColors) {
     padding: 14,
     borderRadius: 8,
     overflow: "hidden",
+  },
+  photoGroup: {
+    gap: 6,
+  },
+  photoGroupLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.muted,
+  },
+  photoRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  photoThumbWrap: {
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  photoThumb: {
+    width: 84,
+    height: 84,
+    borderRadius: 8,
+  },
+  photoThumbFallback: {
+    backgroundColor: colors.line,
+  },
+  photoAddThumb: {
+    width: 84,
+    height: 84,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 4,
+  },
+  photoAddThumbText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalContent: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 8,
+    width: 260,
+  },
+  modalOption: {
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+  },
+  modalOptionText: {
+    color: colors.ink,
+    fontSize: 15,
+    fontWeight: "600",
+    textAlign: "center",
   },
 });
 }

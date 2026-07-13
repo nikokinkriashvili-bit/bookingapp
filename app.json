@@ -32,6 +32,13 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow $(PRODUCT_NAME) to access your photos to attach vehicle photos to a job.",
+          "cameraPermission": "Allow $(PRODUCT_NAME) to use the camera to take vehicle photos."
+        }
       ]
     ],
     "experiments": {
