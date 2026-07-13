@@ -8,6 +8,7 @@ import {
   toTimeString,
   parseDateAndTime,
   addMinutesToDateTime,
+  roundUpToNextQuarterHour,
 } from "@/lib/calendarDate";
 
 describe("toDateKey / fromDateKey", () => {
@@ -58,5 +59,26 @@ describe("time helpers", () => {
   });
   it("addMinutesToDateTime returns null for an invalid input", () => {
     expect(addMinutesToDateTime("not-a-date", "99:99", 60)).toBeNull();
+  });
+});
+
+describe("roundUpToNextQuarterHour", () => {
+  it("rounds up to the next quarter-hour mark", () => {
+    expect(toTimeString(roundUpToNextQuarterHour(new Date(2026, 6, 12, 14, 7)))).toBe(
+      "14:15"
+    );
+    expect(toTimeString(roundUpToNextQuarterHour(new Date(2026, 6, 12, 14, 16)))).toBe(
+      "14:30"
+    );
+  });
+  it("leaves an exact quarter-hour unchanged", () => {
+    expect(toTimeString(roundUpToNextQuarterHour(new Date(2026, 6, 12, 14, 15)))).toBe(
+      "14:15"
+    );
+  });
+  it("rolls over to the next hour/day correctly", () => {
+    const d = roundUpToNextQuarterHour(new Date(2026, 6, 12, 23, 50));
+    expect(toTimeString(d)).toBe("00:00");
+    expect(toDateKey(d)).toBe("2026-07-13");
   });
 });

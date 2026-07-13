@@ -36,6 +36,14 @@ export function toTimeString(date: Date): string {
   return `${hh}:${mm}`;
 }
 
+// Rounds up to the next quarter-hour (14:07 -> 14:15; 14:15 exactly stays
+// 14:15). Used to default a booking's start time to something you'd
+// actually pick, instead of the exact second the screen happened to load.
+export function roundUpToNextQuarterHour(date: Date): Date {
+  const ms = 15 * 60 * 1000;
+  return new Date(Math.ceil(date.getTime() / ms) * ms);
+}
+
 export function parseDateAndTime(dateStr: string, timeStr: string): Date {
   return new Date(`${dateStr}T${timeStr}:00`);
 }

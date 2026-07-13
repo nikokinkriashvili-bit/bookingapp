@@ -19,6 +19,7 @@ import {
   addDays,
   addMinutesToDateTime,
   parseDateAndTime,
+  roundUpToNextQuarterHour,
   toDateKey,
   toTimeString,
 } from "@/lib/calendarDate";
@@ -83,8 +84,16 @@ export default function NewJob() {
   const [staff, setStaff] = useState<StaffOption[]>([]);
   const [assignedStaffId, setAssignedStaffId] = useState<string | null>(null);
 
-  const [fromDate, setFromDate] = useState(dateParam ?? "");
-  const [fromTime, setFromTime] = useState("");
+  // No date param (arriving from +New directly, not a specific calendar day)
+  // means the common case: default to right now, rounded to something
+  // you'd actually pick, instead of making every booking start with a
+  // blank field. A specific dateParam (from the calendar's "add order on
+  // this day" link) keeps the existing blank-time behavior -- "now" isn't
+  // meaningful for a day that isn't today.
+  const [fromDate, setFromDate] = useState(() => dateParam ?? toDateKey(new Date()));
+  const [fromTime, setFromTime] = useState(() =>
+    dateParam ? "" : toTimeString(roundUpToNextQuarterHour(new Date()))
+  );
   const [toDate, setToDate] = useState(dateParam ?? "");
   const [toTime, setToTime] = useState("");
   const [toManuallyEdited, setToManuallyEdited] = useState(false);
@@ -521,6 +530,7 @@ export default function NewJob() {
         <TextInput
           style={styles.input}
           placeholder="YYYY-MM-DD"
+          keyboardType="numbers-and-punctuation"
           value={fromDate}
           onChangeText={setFromDate}
         />
@@ -539,6 +549,7 @@ export default function NewJob() {
         <TextInput
           style={styles.input}
           placeholder="HH:MM"
+          keyboardType="numbers-and-punctuation"
           value={fromTime}
           onChangeText={setFromTime}
         />
@@ -564,6 +575,7 @@ export default function NewJob() {
         <TextInput
           style={styles.input}
           placeholder="YYYY-MM-DD"
+          keyboardType="numbers-and-punctuation"
           value={toDate}
           onChangeText={onToDateChange}
         />
@@ -582,6 +594,7 @@ export default function NewJob() {
         <TextInput
           style={styles.input}
           placeholder="HH:MM"
+          keyboardType="numbers-and-punctuation"
           value={toTime}
           onChangeText={onToTimeChange}
         />
