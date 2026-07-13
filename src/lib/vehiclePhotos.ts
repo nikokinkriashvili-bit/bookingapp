@@ -7,7 +7,7 @@ import { supabase } from "@/lib/supabase";
 // (audits/cost-scaling.md): swapping the backend later means changing the
 // upload/signed-URL functions here, not every screen that shows a photo.
 
-export type PhotoKind = "before" | "after" | "other";
+export type PhotoKind = "before" | "after" | "other" | "condition";
 
 export type VehiclePhoto = {
   id: string;
@@ -91,6 +91,19 @@ export async function captureVehiclePhoto(opts: {
 
 // The bucket is private -- photos are only ever read via short-lived signed
 // URLs, never a public path.
+async function attachSignedUrls(
+  rows: VehiclePhoto[]
+): Promise<(VehiclePhoto & { url: string | null })[]> {
+  return Promise.all(
+    rows.map(async (row) => {
+      const { data: signed } = await supabase.storage
+        .from(BUCKET)
+        .createSignedUrl(row.storage_path, SIGNED_URL_TTL_SECONDS);
+      return { ...row, url: signed?.signedUrl ?? null };
+    })
+  );
+}
+
 export async function listVehiclePhotos(
   vehicleId: string
 ): Promise<{ photos: (VehiclePhoto & { url: string | null })[]; error: string | null }> {
@@ -100,17 +113,23 @@ export async function listVehiclePhotos(
     .eq("vehicle_id", vehicleId)
     .order("created_at", { ascending: false });
   if (error) return { photos: [], error: error.message };
+  return { photos: await attachSignedUrls((data ?? []) as VehiclePhoto[]), error: null };
+}
 
-  const rows = (data ?? []) as VehiclePhoto[];
-  const withUrls = await Promise.all(
-    rows.map(async (row) => {
-      const { data: signed } = await supabase.storage
-        .from(BUCKET)
-        .createSignedUrl(row.storage_path, SIGNED_URL_TTL_SECONDS);
-      return { ...row, url: signed?.signedUrl ?? null };
-    })
-  );
-  return { photos: withUrls, error: null };
+// Condition photos (roadmap 4.1b) are just vehicle_photos rows scoped to one
+// job with kind='condition' -- the dispute-protection record for that
+// specific job, not the vehicle's general before/after gallery.
+export async function listJobConditionPhotos(
+  jobId: string
+): Promise<{ photos: (VehiclePhoto & { url: string | null })[]; error: string | null }> {
+  const { data, error } = await supabase
+    .from("vehicle_photos")
+    .select("id, storage_path, kind, created_at")
+    .eq("job_id", jobId)
+    .eq("kind", "condition")
+    .order("created_at", { ascending: true });
+  if (error) return { photos: [], error: error.message };
+  return { photos: await attachSignedUrls((data ?? []) as VehiclePhoto[]), error: null };
 }
 
 export async function deleteVehiclePhoto(

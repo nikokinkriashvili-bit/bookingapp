@@ -10,10 +10,12 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Image } from "expo-image";
 import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
+import { FetchError } from "@/components/FetchError";
 import { parseDateAndTime, toDateKey, toTimeString } from "@/lib/calendarDate";
 import { STATUS_ORDER, statusLabelKey, type JobStatus } from "@/lib/jobStatus";
 import { fireStatusSeams } from "@/lib/jobActions";
@@ -23,6 +25,19 @@ import {
   changeJobProductQty,
   removeJobProductRow,
 } from "@/lib/consumption";
+import {
+  EMPTY_JOB_CONDITION,
+  getJobCondition,
+  saveJobCondition,
+  type JobCondition,
+} from "@/lib/jobConditions";
+import {
+  captureVehiclePhoto,
+  deleteVehiclePhoto,
+  listJobConditionPhotos,
+  type VehiclePhoto,
+} from "@/lib/vehiclePhotos";
+import { confirmAsync } from "@/lib/confirm";
 
 type Service = {
   id: string;
@@ -35,6 +50,7 @@ type StaffOption = { id: string; name: string };
 
 type JobDetail = {
   id: string;
+  vehicle_id: string;
   status: JobStatus;
   service_ids: string[];
   scheduled_slot: string;
@@ -77,10 +93,19 @@ export default function EditJob() {
   const [toDate, setToDate] = useState("");
   const [toTime, setToTime] = useState("");
   const [price, setPrice] = useState("");
+  const [condition, setCondition] = useState<JobCondition>(EMPTY_JOB_CONDITION);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const [conditionPhotos, setConditionPhotos] = useState<
+    (VehiclePhoto & { url: string | null })[]
+  >([]);
+  const [conditionPhotosError, setConditionPhotosError] = useState(false);
+  const [addingConditionPhoto, setAddingConditionPhoto] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoActionError, setPhotoActionError] = useState<string | null>(null);
 
   const [consumed, setConsumed] = useState<ConsumedRow[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -145,7 +170,7 @@ export default function EditJob() {
     supabase
       .from("jobs")
       .select(
-        "id, status, service_ids, scheduled_slot, scheduled_end, price_total, assigned_staff_id, vehicles(plate_number, make, model), customers(name, phone)"
+        "id, vehicle_id, status, service_ids, scheduled_slot, scheduled_end, price_total, assigned_staff_id, vehicles(plate_number, make, model), customers(name, phone)"
       )
       .eq("id", id)
       .single()
@@ -168,7 +193,61 @@ export default function EditJob() {
         setPrice(j.price_total ? String(j.price_total) : "");
         setLoading(false);
       });
+    getJobCondition(id).then(({ condition: existing }) => {
+      if (existing) setCondition(existing);
+    });
   }, [id]);
+
+  const loadConditionPhotos = useCallback(async () => {
+    if (!id) return;
+    setConditionPhotosError(false);
+    const { photos, error: fetchError } = await listJobConditionPhotos(id);
+    if (fetchError) {
+      setConditionPhotosError(true);
+      return;
+    }
+    setConditionPhotos(photos);
+  }, [id]);
+
+  useEffect(() => {
+    loadConditionPhotos();
+  }, [loadConditionPhotos]);
+
+  const onPickConditionPhotoSource = async (source: "camera" | "library") => {
+    if (!business || !job) return;
+    setAddingConditionPhoto(false);
+    setPhotoActionError(null);
+    setPhotoBusy(true);
+    const { error: captureError } = await captureVehiclePhoto({
+      source,
+      businessId: business.id,
+      vehicleId: job.vehicle_id,
+      jobId: job.id,
+      kind: "condition",
+    });
+    setPhotoBusy(false);
+    if (captureError) {
+      setPhotoActionError(captureError);
+      return;
+    }
+    loadConditionPhotos();
+  };
+
+  const onDeleteConditionPhoto = async (photo: VehiclePhoto) => {
+    const ok = await confirmAsync(
+      t("vehicle.deletePhotoConfirm"),
+      t("common.remove"),
+      t("common.cancel")
+    );
+    if (!ok) return;
+    setPhotoActionError(null);
+    const deleteError = await deleteVehiclePhoto(photo.id, photo.storage_path);
+    if (deleteError) {
+      setPhotoActionError(deleteError);
+      return;
+    }
+    loadConditionPhotos();
+  };
 
   const toggleService = (serviceId: string) => {
     setSelectedServiceIds((prev) =>
@@ -220,6 +299,15 @@ export default function EditJob() {
       setSubmitting(false);
       setError(updateError.message);
       return;
+    }
+
+    if (business) {
+      const conditionError = await saveJobCondition(business.id, job.id, condition);
+      if (conditionError) {
+        setSubmitting(false);
+        setError(conditionError);
+        return;
+      }
     }
 
     // Fire the same integration seams the quick day-view flip does, but only
@@ -437,6 +525,73 @@ export default function EditJob() {
       </View>
 
       <View style={styles.section}>
+        <Text style={styles.sectionLabel}>{t("job.conditionTitle")}</Text>
+        {(
+          [
+            ["bodyDamage", "job.conditionBody"],
+            ["glassDamage", "job.conditionGlass"],
+            ["wheelsDamage", "job.conditionWheels"],
+            ["interiorDamage", "job.conditionInterior"],
+          ] as const
+        ).map(([field, labelKey]) => (
+          <Pressable
+            key={field}
+            style={[styles.option, condition[field] && styles.optionSelected]}
+            onPress={() => setCondition((c) => ({ ...c, [field]: !c[field] }))}
+          >
+            <Text style={condition[field] ? styles.optionTextSelected : styles.optionText}>
+              {t(labelKey)}
+              {condition[field] ? ` · ${t("job.conditionDamageNoted")}` : ""}
+            </Text>
+          </Pressable>
+        ))}
+        <TextInput
+          style={[styles.input, styles.conditionNoteInput]}
+          placeholder={t("job.conditionNotePlaceholder")}
+          multiline
+          value={condition.note}
+          onChangeText={(v) => setCondition((c) => ({ ...c, note: v }))}
+        />
+
+        <Text style={[styles.subLabel, styles.conditionPhotosLabel]}>
+          {t("job.conditionPhotos")}
+        </Text>
+        {conditionPhotosError ? (
+          <FetchError onRetry={loadConditionPhotos} />
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.photoRow}>
+              {conditionPhotos.map((photo) => (
+                <Pressable
+                  key={photo.id}
+                  style={styles.photoThumbWrap}
+                  onLongPress={() => onDeleteConditionPhoto(photo)}
+                >
+                  {photo.url ? (
+                    <Image source={{ uri: photo.url }} style={styles.photoThumb} contentFit="cover" />
+                  ) : (
+                    <View style={[styles.photoThumb, styles.photoThumbFallback]} />
+                  )}
+                </Pressable>
+              ))}
+              <Pressable
+                style={styles.photoAddThumb}
+                disabled={photoBusy}
+                onPress={() => setAddingConditionPhoto(true)}
+              >
+                {photoBusy ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <Text style={styles.photoAddThumbText}>{t("job.addConditionPhoto")}</Text>
+                )}
+              </Pressable>
+            </View>
+          </ScrollView>
+        )}
+        {photoActionError ? <Text style={styles.error}>{photoActionError}</Text> : null}
+      </View>
+
+      <View style={styles.section}>
         <Text style={styles.sectionLabel}>{t("job.schedule")}</Text>
         <Text style={styles.subLabel}>{t("job.from")}</Text>
         <TextInput
@@ -504,6 +659,41 @@ export default function EditJob() {
           </View>
         </Pressable>
       </Modal>
+
+      <Modal
+        visible={addingConditionPhoto}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setAddingConditionPhoto(false)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setAddingConditionPhoto(false)}
+        >
+          <View style={styles.modalContent}>
+            <Pressable
+              style={styles.modalOption}
+              onPress={() => onPickConditionPhotoSource("camera")}
+            >
+              <Text style={styles.modalOptionText}>{t("vehicle.photoSourceCamera")}</Text>
+            </Pressable>
+            <Pressable
+              style={styles.modalOption}
+              onPress={() => onPickConditionPhotoSource("library")}
+            >
+              <Text style={styles.modalOptionText}>{t("vehicle.photoSourceLibrary")}</Text>
+            </Pressable>
+            <Pressable
+              style={styles.modalOption}
+              onPress={() => setAddingConditionPhoto(false)}
+            >
+              <Text style={[styles.modalOptionText, { color: colors.danger }]}>
+                {t("common.cancel")}
+              </Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 }
@@ -560,6 +750,47 @@ function createStyles(colors: ThemeColors) {
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+  },
+  conditionNoteInput: {
+    minHeight: 70,
+    textAlignVertical: "top",
+    marginTop: 8,
+  },
+  conditionPhotosLabel: {
+    marginTop: 8,
+  },
+  photoRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  photoThumbWrap: {
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  photoThumb: {
+    width: 84,
+    height: 84,
+    borderRadius: 8,
+  },
+  photoThumbFallback: {
+    backgroundColor: colors.line,
+  },
+  photoAddThumb: {
+    width: 84,
+    height: 84,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 4,
+  },
+  photoAddThumbText: {
+    color: colors.primary,
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
   },
   option: {
     borderWidth: 1,

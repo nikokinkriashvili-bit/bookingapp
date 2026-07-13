@@ -24,6 +24,7 @@ import {
   toTimeString,
 } from "@/lib/calendarDate";
 import { parseDecimalOr, parseIntOr } from "@/lib/number";
+import { EMPTY_JOB_CONDITION, saveJobCondition, type JobCondition } from "@/lib/jobConditions";
 
 type Vehicle = {
   id: string;
@@ -100,6 +101,8 @@ export default function NewJob() {
 
   const [price, setPrice] = useState("");
   const [priceManuallyEdited, setPriceManuallyEdited] = useState(false);
+
+  const [condition, setCondition] = useState<JobCondition>(EMPTY_JOB_CONDITION);
 
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -333,6 +336,10 @@ export default function NewJob() {
     }
 
     if (createdJob) {
+      // Condition photos need a job_id, which doesn't exist until this point --
+      // added later on the edit screen. The checklist/note have no such
+      // dependency, so they save right here alongside the job itself.
+      await saveJobCondition(business.id, createdJob.id, condition);
       // TODO(TRD §5.5): booking-confirmed WhatsApp fires here once step 9 lands.
       await sendWhatsAppMessage("booking_confirmed", createdJob.id);
     }
@@ -524,6 +531,36 @@ export default function NewJob() {
       </View>
 
       <View style={styles.section}>
+        <Text style={styles.sectionLabel}>{t("job.conditionTitle")}</Text>
+        {(
+          [
+            ["bodyDamage", "job.conditionBody"],
+            ["glassDamage", "job.conditionGlass"],
+            ["wheelsDamage", "job.conditionWheels"],
+            ["interiorDamage", "job.conditionInterior"],
+          ] as const
+        ).map(([field, labelKey]) => (
+          <Pressable
+            key={field}
+            style={[styles.option, condition[field] && styles.optionSelected]}
+            onPress={() => setCondition((c) => ({ ...c, [field]: !c[field] }))}
+          >
+            <Text style={condition[field] ? styles.optionTextSelected : styles.optionText}>
+              {t(labelKey)}
+              {condition[field] ? ` · ${t("job.conditionDamageNoted")}` : ""}
+            </Text>
+          </Pressable>
+        ))}
+        <TextInput
+          style={[styles.input, styles.conditionNoteInput]}
+          placeholder={t("job.conditionNotePlaceholder")}
+          multiline
+          value={condition.note}
+          onChangeText={(v) => setCondition((c) => ({ ...c, note: v }))}
+        />
+      </View>
+
+      <View style={styles.section}>
         <Text style={styles.sectionLabel}>{t("job.schedule")}</Text>
         <Text style={styles.subLabel}>{t("job.from")}</Text>
         <FieldLabel>{t("common.date")}</FieldLabel>
@@ -701,6 +738,11 @@ function createStyles(colors: ThemeColors) {
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+  },
+  conditionNoteInput: {
+    minHeight: 70,
+    textAlignVertical: "top",
+    marginTop: 8,
   },
   option: {
     borderWidth: 1,
