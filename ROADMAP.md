@@ -34,8 +34,8 @@ Work top to bottom. Check items off here (`[ ]` → `[x]`, add the date). Each s
 
 ## Stage 3 — Intake speed + polish quick wins *(the <30s requirement)*
 
-- [ ] **3.1** ⚙️ Intake defaults: From = today + now rounded up to 15 min when no date param. ([audits/intake-speed.md](audits/intake-speed.md) R1 — biggest UX win in the app.)
-- [~] **3.2** ⚙️ Date/time quick chips — **done via the UX-clarity pass (ea9eeaf)**: Today/Tomorrow/Now/+1h/09:00/14:00 chips on all four schedule fields. Still open: numeric keyboard restriction on the raw text inputs themselves (R3).
+- [x] **3.1** ⚙️ Intake defaults done (f7dee2b): From = today + now rounded up to 15 min when no date param (`roundUpToNextQuarterHour`, unit tested).
+- [x] **3.2** ⚙️ Date/time quick chips (ea9eeaf) + numeric keyboards (f7dee2b) — **fully done.**
 - [ ] **3.3** ⚙️ Accessibility quick pass ([audits/accessibility.md](audits/accessibility.md)): hitSlop ≥44pt on steppers/×/nav arrows; `accessibilityLabel` on icon-only buttons (new i18n keys, both languages); darken light-theme `muted` token to pass 4.5:1.
 - [ ] **3.4** ⚙️ Localization fixes ([audits/localization.md](audits/localization.md)): `po.expectedDeliveryShort` key replaces the `.split(" (")` hack (L2); rename `common.to` → time-range separator key (L3).
 - [ ] **3.5** 🖐 Decision: month-grid 9px text redesign (count badges vs. denser chips) — pick a direction, then ⚙️ implement.
@@ -102,3 +102,4 @@ Every box in Stages 0–3 and 7, plus 4.1–4.4 + 4.6–4.8, plus 6.1–6.3, che
 | July 2026 | Ad-hoc fixes (outside the numbered stages) | Real-phone testing surfaced 2 bugs: web dark-mode background (d2e2da8) and an unclickable tab bar on mobile touch + the Tabs scene background (fa5eb1f); CI itself was failing on Node 20's Metro floor, bumped to Node 22 (94004e6); ARCHITECTURE.md added as a hand-maintained navigation index (9d0d132) |
 | July 2026 | UX clarity pass ✅ | C2 (field labels), C1 quick-chip half (Today/Tomorrow/Now/+1h/09:00/14:00), C3 (scroll-to-error), C4 (new-vehicle framing copy) — all committed (ea9eeaf). C5/C6 deferred. Overlaps/closes the chip half of Stage 3.2. |
 | July 2026 | Stage 2.1 + 2.3 ✅ | Migration 011 written (constraints, S1/S2 RLS fixes, indexes, schema_migrations bookkeeping) + dependency housekeeping (858475e). **2.2 still blocked on Niko running the migration.** |
+| July 2026 | Stage 3.1 + 3.2 ✅ | Intake From-field now defaults to today+now-rounded (f7dee2b); numeric keyboards on all 4 schedule inputs. Combined with the earlier UX-clarity chips (ea9eeaf), Stage 3.2 is fully closed. |
