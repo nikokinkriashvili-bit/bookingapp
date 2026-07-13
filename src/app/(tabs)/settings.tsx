@@ -288,7 +288,7 @@ export default function Settings() {
                     onChangeText={(v) => updateTime(day, "open", v)}
                     placeholder="09:00"
                   />
-                  <Text style={styles.timeSeparator}>{t("common.to")}</Text>
+                  <Text style={styles.timeSeparator}>{t("common.timeRangeSeparator")}</Text>
                   <TextInput
                     style={styles.timeInput}
                     value={dayHours.close}

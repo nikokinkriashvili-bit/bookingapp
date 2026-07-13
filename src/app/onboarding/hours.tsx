@@ -63,7 +63,7 @@ export default function HoursStep() {
                   onChangeText={(v) => updateTime(day, "open", v)}
                   placeholder="09:00"
                 />
-                <Text style={styles.timeSeparator}>{t("common.to")}</Text>
+                <Text style={styles.timeSeparator}>{t("common.timeRangeSeparator")}</Text>
                 <TextInput
                   style={styles.timeInput}
                   value={hours.close}

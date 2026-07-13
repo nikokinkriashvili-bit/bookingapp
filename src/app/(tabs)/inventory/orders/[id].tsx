@@ -335,7 +335,7 @@ export default function PurchaseOrderDetail() {
         </View>
       ) : po.expected_delivery ? (
         <Text style={styles.subtitle}>
-          {t("po.expectedDelivery").split(" (")[0]}: {po.expected_delivery}
+          {t("po.expectedDeliveryShort")}: {po.expected_delivery}
         </Text>
       ) : null}
 

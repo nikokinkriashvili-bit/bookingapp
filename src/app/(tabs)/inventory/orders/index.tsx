@@ -117,7 +117,7 @@ export default function PurchaseOrders() {
               </Text>
               {item.expected_delivery ? (
                 <Text style={styles.cardDetail}>
-                  {t("po.expectedDelivery").split(" (")[0]}: {item.expected_delivery}
+                  {t("po.expectedDeliveryShort")}: {item.expected_delivery}
                 </Text>
               ) : null}
             </Pressable>

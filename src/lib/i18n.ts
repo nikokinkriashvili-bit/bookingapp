@@ -92,7 +92,7 @@ const en = {
   "common.closed": "Closed",
   "common.date": "Date",
   "common.time": "Time",
-  "common.to": "to",
+  "common.timeRangeSeparator": "to",
   "common.minShort": "min",
   "common.duration": "Duration",
 
@@ -268,6 +268,7 @@ const en = {
   "po.unitPrice": "Unit price",
   "po.total": "Total",
   "po.expectedDelivery": "Expected delivery (YYYY-MM-DD)",
+  "po.expectedDeliveryShort": "Expected delivery",
   "po.addItem": "+ Add product",
   "po.pickProduct": "Add product to order",
   "po.markSent": "Mark as sent",
@@ -387,7 +388,7 @@ const ka: Record<StringKey, string> = {
   "common.closed": "დაკეტილია",
   "common.date": "თარიღი",
   "common.time": "დრო",
-  "common.to": "–",
+  "common.timeRangeSeparator": "–",
   "common.minShort": "წთ",
   "common.duration": "ხანგრძლივობა",
 
@@ -549,6 +550,7 @@ const ka: Record<StringKey, string> = {
   "po.unitPrice": "ერთეულის ფასი",
   "po.total": "სულ",
   "po.expectedDelivery": "მოსალოდნელი მიწოდება (YYYY-MM-DD)",
+  "po.expectedDeliveryShort": "მოსალოდნელი მიწოდება",
   "po.addItem": "+ პროდუქტის დამატება",
   "po.pickProduct": "დაამატეთ პროდუქტი შეკვეთაში",
   "po.markSent": "გაგზავნილად მონიშვნა",
