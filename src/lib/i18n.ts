@@ -167,7 +167,6 @@ const en = {
   "dash.revenue": "Revenue (last month)",
   "dash.pendingPayments": "Pending payments",
   "dash.currentJobs": "Current jobs",
-  "dash.comingSoon": "Coming soon",
   "dash.materialsThisMonth": "Material purchases (this month)",
   "dash.materialsLastMonth": "Material purchases (last month)",
 
@@ -463,7 +462,6 @@ const ka: Record<StringKey, string> = {
   "dash.revenue": "შემოსავალი (გასული თვე)",
   "dash.pendingPayments": "გადაუხდელი თანხები",
   "dash.currentJobs": "მიმდინარე შეკვეთები",
-  "dash.comingSoon": "მალე",
   "dash.materialsThisMonth": "მასალების შესყიდვები (ამ თვეში)",
   "dash.materialsLastMonth": "მასალების შესყიდვები (გასულ თვეში)",
 

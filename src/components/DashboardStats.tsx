@@ -14,6 +14,13 @@ type Stats = {
   revenue: number;
   pendingPayments: number;
   currentJobs: number;
+  materialsThisMonth: number;
+  materialsLastMonth: number;
+};
+
+type ReceivedPo = {
+  received_at: string;
+  purchase_order_items: { qty: number; unit_price: number | null }[];
 };
 
 const CURRENT_STATUSES = ["booked", "in_progress", "awaiting_collection"];
@@ -33,8 +40,9 @@ export function DashboardStats() {
     const now = new Date();
     const prevMonthStart = addMonths(startOfMonth(now), -1);
     const prevMonthEnd = startOfMonth(now);
+    const thisMonthEnd = addMonths(prevMonthEnd, 1);
 
-    const [prevMonthResult, allTimeResult] = await Promise.all([
+    const [prevMonthResult, allTimeResult, receivedPoResult] = await Promise.all([
       supabase
         .from("jobs")
         .select("vehicle_id, status, price_total")
@@ -42,15 +50,24 @@ export function DashboardStats() {
         .gte("scheduled_slot", prevMonthStart.toISOString())
         .lt("scheduled_slot", prevMonthEnd.toISOString()),
       supabase.from("jobs").select("status, price_total").eq("business_id", business.id),
+      // Both months in one query (previous month start through now) --
+      // split client-side rather than firing two near-identical queries.
+      supabase
+        .from("purchase_orders")
+        .select("received_at, purchase_order_items(qty, unit_price)")
+        .eq("business_id", business.id)
+        .eq("status", "received")
+        .gte("received_at", prevMonthStart.toISOString()),
     ]);
 
-    if (prevMonthResult.error || allTimeResult.error) {
+    if (prevMonthResult.error || allTimeResult.error || receivedPoResult.error) {
       setError(true);
       return;
     }
 
     const prevMonthJobs = prevMonthResult.data ?? [];
     const allJobs = allTimeResult.data ?? [];
+    const receivedPos = (receivedPoResult.data as unknown as ReceivedPo[]) ?? [];
 
     const finishedPrevMonth = prevMonthJobs.filter(
       (j) => j.status === "complete" || j.status === "paid"
@@ -65,7 +82,26 @@ export function DashboardStats() {
       .reduce((sum, j) => sum + (j.price_total ?? 0), 0);
     const currentJobs = allJobs.filter((j) => CURRENT_STATUSES.includes(j.status)).length;
 
-    setStats({ carsServiced, revenue, pendingPayments, currentJobs });
+    const poSpend = (po: ReceivedPo) =>
+      po.purchase_order_items.reduce(
+        (sum, item) => sum + Number(item.qty) * Number(item.unit_price ?? 0),
+        0
+      );
+    const materialsThisMonth = receivedPos
+      .filter((po) => po.received_at >= prevMonthEnd.toISOString() && po.received_at < thisMonthEnd.toISOString())
+      .reduce((sum, po) => sum + poSpend(po), 0);
+    const materialsLastMonth = receivedPos
+      .filter((po) => po.received_at >= prevMonthStart.toISOString() && po.received_at < prevMonthEnd.toISOString())
+      .reduce((sum, po) => sum + poSpend(po), 0);
+
+    setStats({
+      carsServiced,
+      revenue,
+      pendingPayments,
+      currentJobs,
+      materialsThisMonth,
+      materialsLastMonth,
+    });
   }, [business]);
 
   useEffect(() => {
@@ -98,6 +134,7 @@ export function DashboardStats() {
   const tealTone = statusTone(colors, "paid");
   const warningTone = statusTone(colors, "in_progress");
   const infoTone = statusTone(colors, "booked");
+  const neutralTone = statusTone(colors, "cancelled");
 
   return (
     <View style={styles.grid}>
@@ -127,13 +164,21 @@ export function DashboardStats() {
           {t("dash.currentJobs")}
         </Text>
       </View>
-      <View style={[styles.balloon, styles.placeholder]}>
-        <Text style={styles.placeholderValue}>{t("dash.comingSoon")}</Text>
-        <Text style={styles.placeholderLabel}>{t("dash.materialsThisMonth")}</Text>
+      <View style={[styles.balloon, { backgroundColor: neutralTone.bg }]}>
+        <Text style={[styles.value, { color: neutralTone.text }]}>
+          {formatGel(stats.materialsThisMonth)}
+        </Text>
+        <Text style={[styles.label, { color: neutralTone.text }]}>
+          {t("dash.materialsThisMonth")}
+        </Text>
       </View>
-      <View style={[styles.balloon, styles.placeholder]}>
-        <Text style={styles.placeholderValue}>{t("dash.comingSoon")}</Text>
-        <Text style={styles.placeholderLabel}>{t("dash.materialsLastMonth")}</Text>
+      <View style={[styles.balloon, { backgroundColor: neutralTone.bg }]}>
+        <Text style={[styles.value, { color: neutralTone.text }]}>
+          {formatGel(stats.materialsLastMonth)}
+        </Text>
+        <Text style={[styles.label, { color: neutralTone.text }]}>
+          {t("dash.materialsLastMonth")}
+        </Text>
       </View>
     </View>
   );
@@ -161,20 +206,6 @@ function createStyles(colors: ThemeColors) {
   },
   label: {
     color: colors.ink,
-    fontSize: 11,
-    marginTop: 4,
-  },
-  placeholder: {
-    backgroundColor: colors.line,
-  },
-  placeholderValue: {
-    color: colors.muted,
-    fontSize: 14,
-    fontWeight: "700",
-    fontStyle: "italic",
-  },
-  placeholderLabel: {
-    color: colors.muted,
     fontSize: 11,
     marginTop: 4,
   },
