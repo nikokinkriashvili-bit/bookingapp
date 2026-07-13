@@ -37,7 +37,7 @@ Work top to bottom. Check items off here (`[ ]` → `[x]`, add the date). Each s
 - [x] **3.1** ⚙️ Intake defaults done (f7dee2b): From = today + now rounded up to 15 min when no date param (`roundUpToNextQuarterHour`, unit tested).
 - [x] **3.2** ⚙️ Date/time quick chips (ea9eeaf) + numeric keyboards (f7dee2b) — **fully done.**
 - [ ] **3.3** ⚙️ Accessibility quick pass ([audits/accessibility.md](audits/accessibility.md)): hitSlop ≥44pt on steppers/×/nav arrows; `accessibilityLabel` on icon-only buttons (new i18n keys, both languages); darken light-theme `muted` token to pass 4.5:1.
-- [ ] **3.4** ⚙️ Localization fixes ([audits/localization.md](audits/localization.md)): `po.expectedDeliveryShort` key replaces the `.split(" (")` hack (L2); rename `common.to` → time-range separator key (L3).
+- [x] **3.4** ⚙️ Localization fixes done (8b1645d): `po.expectedDeliveryShort` key replaces the `.split(" (")` hack (L2); `common.to` renamed to `common.timeRangeSeparator` (L3).
 - [ ] **3.5** 🖐 Decision: month-grid 9px text redesign (count badges vs. denser chips) — pick a direction, then ⚙️ implement.
 - [ ] **3.6** ⚙️ Light up the two "materials" dashboard balloons with real spend from received POs (F1 — the data exists now; placeholders retire).
 
@@ -103,3 +103,4 @@ Every box in Stages 0–3 and 7, plus 4.1–4.4 + 4.6–4.8, plus 6.1–6.3, che
 | July 2026 | UX clarity pass ✅ | C2 (field labels), C1 quick-chip half (Today/Tomorrow/Now/+1h/09:00/14:00), C3 (scroll-to-error), C4 (new-vehicle framing copy) — all committed (ea9eeaf). C5/C6 deferred. Overlaps/closes the chip half of Stage 3.2. |
 | July 2026 | Stage 2.1 + 2.3 ✅ | Migration 011 written (constraints, S1/S2 RLS fixes, indexes, schema_migrations bookkeeping) + dependency housekeeping (858475e). **2.2 still blocked on Niko running the migration.** |
 | July 2026 | Stage 3.1 + 3.2 ✅ | Intake From-field now defaults to today+now-rounded (f7dee2b); numeric keyboards on all 4 schedule inputs. Combined with the earlier UX-clarity chips (ea9eeaf), Stage 3.2 is fully closed. |
+| July 2026 | Stage 3.4 ✅ | `po.expectedDeliveryShort` key + `common.to`→`common.timeRangeSeparator` rename (8b1645d) |
