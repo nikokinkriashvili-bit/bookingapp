@@ -28,9 +28,9 @@ Work top to bottom. Check items off here (`[ ]` → `[x]`, add the date). Each s
 
 ## Stage 2 — Database integrity *(one migration, one session)*
 
-- [ ] **2.1** ⚙️ Write `supabase/011_integrity_and_indexes.sql` from the draft spec in [audits/security-data-integrity.md](audits/security-data-integrity.md): pre-flight cleanup queries, CHECK constraints (end>start, stock≥0, qty>0), `customer_vehicles` both-sides RLS fix, **drop the linked-supplier PO-update policy** (S1), all missing indexes, `schema_migrations` table.
-- [ ] **2.2** 🖐 Run the cleanup queries first, review results, then run 011. *Done = `select * from schema_migrations` lists 001–011.*
-- [ ] **2.3** ⚙️ Housekeeping batch: remove unused beta deps (`@expo/ui`, `expo-glass-effect`, `expo-symbols`, `expo-device`); verify export still clean.
+- [x] **2.1** ⚙️ `supabase/011_integrity_and_indexes.sql` written (858475e) — matches the audit's draft spec verbatim.
+- [ ] **2.2** 🖐 **Blocked on Niko.** Run the pre-flight cleanup queries first, review results, then run 011 in the Supabase SQL Editor. *Done = `select * from schema_migrations` lists 001–011.*
+- [x] **2.3** ⚙️ Housekeeping done (858475e): removed 4 unused beta deps (zero imports confirmed first); moved jest/jest-expo/@types/jest to devDependencies (an earlier install misplaced them). Verified: tsc/lint/jest clean, app boots with no console errors, production export succeeds.
 
 ## Stage 3 — Intake speed + polish quick wins *(the <30s requirement)*
 
@@ -101,3 +101,4 @@ Every box in Stages 0–3 and 7, plus 4.1–4.4 + 4.6–4.8, plus 6.1–6.3, che
 | July 2026 | Stage 1 ✅ | CI + 38 unit tests, error boundary, auth gate, error-vs-empty states (03b3efb, c134b77, e94c1de) |
 | July 2026 | Ad-hoc fixes (outside the numbered stages) | Real-phone testing surfaced 2 bugs: web dark-mode background (d2e2da8) and an unclickable tab bar on mobile touch + the Tabs scene background (fa5eb1f); CI itself was failing on Node 20's Metro floor, bumped to Node 22 (94004e6); ARCHITECTURE.md added as a hand-maintained navigation index (9d0d132) |
 | July 2026 | UX clarity pass ✅ | C2 (field labels), C1 quick-chip half (Today/Tomorrow/Now/+1h/09:00/14:00), C3 (scroll-to-error), C4 (new-vehicle framing copy) — all committed (ea9eeaf). C5/C6 deferred. Overlaps/closes the chip half of Stage 3.2. |
+| July 2026 | Stage 2.1 + 2.3 ✅ | Migration 011 written (constraints, S1/S2 RLS fixes, indexes, schema_migrations bookkeeping) + dependency housekeeping (858475e). **2.2 still blocked on Niko running the migration.** |
