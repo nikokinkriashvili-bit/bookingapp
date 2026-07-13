@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**Read [ARCHITECTURE.md](ARCHITECTURE.md) first for structural/navigation questions** (routes, providers, data model, "where do I look for X") — it's a hand-maintained index built to be trusted without re-deriving the codebase structure from scratch each session. This file (CLAUDE.md) is the narrative build log — what's built and why, product decisions, current state. Keep ARCHITECTURE.md updated in the same commit whenever you add a route, table, provider, or lib module — a stale map is worse than no map.
+
 ## Project status (updated July 2026)
 
 Git is initialized and pushed to [github.com/nikokinkriashvili-bit/bookingapp](https://github.com/nikokinkriashvili-bit/bookingapp). The Expo project is scaffolded (SDK 54 to match the Expo Go App Store release, Expo Router, TypeScript, `src/app` directory structure). Supabase is connected (`src/lib/supabase.ts`, credentials in `.env`, gitignored — see `.env.example`) and the web build deploys to Vercel at bookingapp-beta-two.vercel.app.
