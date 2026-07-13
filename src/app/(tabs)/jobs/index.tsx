@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
@@ -15,7 +15,13 @@ import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
 import { sendWhatsAppMessage } from "@/lib/integrations";
 import { FieldLabel } from "@/components/FieldLabel";
-import { addMinutesToDateTime, parseDateAndTime } from "@/lib/calendarDate";
+import {
+  addDays,
+  addMinutesToDateTime,
+  parseDateAndTime,
+  toDateKey,
+  toTimeString,
+} from "@/lib/calendarDate";
 import { parseDecimalOr, parseIntOr } from "@/lib/number";
 
 type Vehicle = {
@@ -88,6 +94,18 @@ export default function NewJob() {
 
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+
+  // Setting error text alone doesn't reliably bring it into view: if the
+  // ScrollView is already scrolled to its prior max extent, the newly-added
+  // error line (right above the Create button, at the very bottom of the
+  // form) renders past the current viewport instead of within it -- the user
+  // sees no visible change and has to scroll further to find out why saving
+  // failed. Explicitly scroll to the end whenever a validation error appears.
+  const showError = (message: string) => {
+    setError(message);
+    scrollRef.current?.scrollToEnd({ animated: true });
+  };
 
   useEffect(() => {
     if (!business) return;
@@ -192,33 +210,33 @@ export default function NewJob() {
 
     const trimmedPlate = plate.trim().toUpperCase();
     if (!trimmedPlate) {
-      setError(t("job.errorPlate"));
+      showError(t("job.errorPlate"));
       return;
     }
     if (selectedServiceIds.length === 0) {
-      setError(t("job.errorService"));
+      showError(t("job.errorService"));
       return;
     }
     if (!fromDate || !fromTime || !toDate || !toTime) {
-      setError(t("job.errorFromTo"));
+      showError(t("job.errorFromTo"));
       return;
     }
     const scheduledSlot = parseDateAndTime(fromDate, fromTime);
     const scheduledEnd = parseDateAndTime(toDate, toTime);
     if (isNaN(scheduledSlot.getTime()) || isNaN(scheduledEnd.getTime())) {
-      setError(t("job.errorDateFormat"));
+      showError(t("job.errorDateFormat"));
       return;
     }
     if (scheduledEnd <= scheduledSlot) {
-      setError(t("job.errorEndAfterStart"));
+      showError(t("job.errorEndAfterStart"));
       return;
     }
     if (selectedCustomerId === "new" && (!customerName.trim() || !customerPhone.trim())) {
-      setError(t("job.errorCustomerDetails"));
+      showError(t("job.errorCustomerDetails"));
       return;
     }
     if (!selectedCustomerId) {
-      setError(t("job.errorSelectCustomer"));
+      showError(t("job.errorSelectCustomer"));
       return;
     }
 
@@ -314,7 +332,7 @@ export default function NewJob() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView ref={scrollRef} contentContainerStyle={styles.container}>
       <Text style={styles.title}>{t("job.newOrderTitle")}</Text>
 
       <TextInput
@@ -374,6 +392,7 @@ export default function NewJob() {
 
       {hasLookedUp && !foundVehicle ? (
         <View style={styles.section}>
+          <Text style={styles.foundText}>{t("job.newVehicle")}</Text>
           <Text style={styles.sectionLabel}>{t("job.vehicleDetails")}</Text>
           <FieldLabel>{t("vehicle.make")}</FieldLabel>
           <TextInput style={styles.input} value={make} onChangeText={setMake} />
@@ -498,31 +517,91 @@ export default function NewJob() {
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>{t("job.schedule")}</Text>
         <Text style={styles.subLabel}>{t("job.from")}</Text>
+        <FieldLabel>{t("common.date")}</FieldLabel>
         <TextInput
           style={styles.input}
           placeholder="YYYY-MM-DD"
           value={fromDate}
           onChangeText={setFromDate}
         />
+        <View style={styles.chipRow}>
+          <Pressable style={styles.chip} onPress={() => setFromDate(toDateKey(new Date()))}>
+            <Text style={styles.chipText}>{t("job.chipToday")}</Text>
+          </Pressable>
+          <Pressable
+            style={styles.chip}
+            onPress={() => setFromDate(toDateKey(addDays(new Date(), 1)))}
+          >
+            <Text style={styles.chipText}>{t("job.chipTomorrow")}</Text>
+          </Pressable>
+        </View>
+        <FieldLabel>{t("common.time")}</FieldLabel>
         <TextInput
           style={styles.input}
           placeholder="HH:MM"
           value={fromTime}
           onChangeText={setFromTime}
         />
+        <View style={styles.chipRow}>
+          <Pressable style={styles.chip} onPress={() => setFromTime(toTimeString(new Date()))}>
+            <Text style={styles.chipText}>{t("job.chipNow")}</Text>
+          </Pressable>
+          <Pressable
+            style={styles.chip}
+            onPress={() => setFromTime(toTimeString(new Date(Date.now() + 60 * 60000)))}
+          >
+            <Text style={styles.chipText}>{t("job.chipPlus1h")}</Text>
+          </Pressable>
+          <Pressable style={styles.chip} onPress={() => setFromTime("09:00")}>
+            <Text style={styles.chipText}>09:00</Text>
+          </Pressable>
+          <Pressable style={styles.chip} onPress={() => setFromTime("14:00")}>
+            <Text style={styles.chipText}>14:00</Text>
+          </Pressable>
+        </View>
         <Text style={styles.subLabel}>{t("job.to")}</Text>
+        <FieldLabel>{t("common.date")}</FieldLabel>
         <TextInput
           style={styles.input}
           placeholder="YYYY-MM-DD"
           value={toDate}
           onChangeText={onToDateChange}
         />
+        <View style={styles.chipRow}>
+          <Pressable style={styles.chip} onPress={() => onToDateChange(toDateKey(new Date()))}>
+            <Text style={styles.chipText}>{t("job.chipToday")}</Text>
+          </Pressable>
+          <Pressable
+            style={styles.chip}
+            onPress={() => onToDateChange(toDateKey(addDays(new Date(), 1)))}
+          >
+            <Text style={styles.chipText}>{t("job.chipTomorrow")}</Text>
+          </Pressable>
+        </View>
+        <FieldLabel>{t("common.time")}</FieldLabel>
         <TextInput
           style={styles.input}
           placeholder="HH:MM"
           value={toTime}
           onChangeText={onToTimeChange}
         />
+        <View style={styles.chipRow}>
+          <Pressable style={styles.chip} onPress={() => onToTimeChange(toTimeString(new Date()))}>
+            <Text style={styles.chipText}>{t("job.chipNow")}</Text>
+          </Pressable>
+          <Pressable
+            style={styles.chip}
+            onPress={() => onToTimeChange(toTimeString(new Date(Date.now() + 60 * 60000)))}
+          >
+            <Text style={styles.chipText}>{t("job.chipPlus1h")}</Text>
+          </Pressable>
+          <Pressable style={styles.chip} onPress={() => onToTimeChange("09:00")}>
+            <Text style={styles.chipText}>09:00</Text>
+          </Pressable>
+          <Pressable style={styles.chip} onPress={() => onToTimeChange("14:00")}>
+            <Text style={styles.chipText}>14:00</Text>
+          </Pressable>
+        </View>
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -583,6 +662,24 @@ function createStyles(colors: ThemeColors) {
     fontWeight: "600",
     color: colors.muted,
     marginTop: 6,
+  },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 4,
+  },
+  chip: {
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  chipText: {
+    color: colors.inkSoft,
+    fontSize: 13,
+    fontWeight: "600",
   },
   input: {
     color: colors.ink,
