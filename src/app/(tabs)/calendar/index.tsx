@@ -16,12 +16,11 @@ import { PeriodSummary } from "@/components/PeriodSummary";
 import { CalendarFiltersButton } from "@/components/CalendarFiltersButton";
 import { FetchError } from "@/components/FetchError";
 import { useCalendarFilters } from "@/providers/CalendarFilterProvider";
-import { statusTone, summarizeJobs, type JobStatus } from "@/lib/jobStatus";
-import { localeFor, type StringKey } from "@/lib/i18n";
+import { STATUS_ORDER, statusTone, summarizeJobs, type JobStatus } from "@/lib/jobStatus";
+import { formatGel, localeFor, type StringKey } from "@/lib/i18n";
 import { addDays, addMonths, startOfDay, startOfMonth, toDateKey } from "@/lib/calendarDate";
 
 const WEEKDAY_HEADER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
-const MAX_CHIPS_PER_CELL = 6;
 
 type JobRow = {
   status: JobStatus;
@@ -184,6 +183,18 @@ export default function CalendarMonth() {
               const key = toDateKey(date);
               const dayJobs = jobsByDate[key] ?? [];
               const isCurrentMonth = date.getMonth() === month.getMonth();
+              // Redesign per audits/accessibility.md A2 + Niko: the old per-job
+              // chips truncated vehicle names into an unreadable 9px line and
+              // could never legibly fit more than a couple per cell. Replaced
+              // with two glanceable numbers instead: the day's total GEL value
+              // and a count-per-status row (color already carries the status
+              // meaning everywhere else in the app, so a bare number reads fine
+              // at any size — no text to truncate).
+              const dayTotal = dayJobs.length > 0 ? summarizeJobs(dayJobs).total : 0;
+              const statusCounts = STATUS_ORDER.map((status) => ({
+                status,
+                count: dayJobs.filter((j) => j.status === status).length,
+              })).filter((s) => s.count > 0);
               return (
                 <Pressable
                   key={key}
@@ -193,29 +204,27 @@ export default function CalendarMonth() {
                   <Text style={[styles.cellDay, !isCurrentMonth && styles.cellDayMuted]}>
                     {date.getDate()}
                   </Text>
-                  {dayJobs.slice(0, MAX_CHIPS_PER_CELL).map((job, i) => {
-                    const tone = statusTone(colors, job.status);
-                    return (
-                    <View
-                      key={i}
-                      style={[styles.chip, { backgroundColor: tone.bg }]}
-                    >
-                      <Text
-                        style={[styles.chipText, { color: tone.text }]}
-                        numberOfLines={1}
-                      >
-                        {[job.vehicles?.make, job.vehicles?.model]
-                          .filter(Boolean)
-                          .join(" ") || t("calendar.vehicleFallback")}
-                        {job.price_total ? ` · ${job.price_total}` : ""}
+                  {dayJobs.length > 0 ? (
+                    <>
+                      <Text style={styles.cellTotal} numberOfLines={1}>
+                        {formatGel(dayTotal)}
                       </Text>
-                    </View>
-                  );
-                  })}
-                  {dayJobs.length > MAX_CHIPS_PER_CELL ? (
-                    <Text style={styles.moreText}>
-                      +{dayJobs.length - MAX_CHIPS_PER_CELL} {t("calendar.more")}
-                    </Text>
+                      <View style={styles.statusBadgeRow}>
+                        {statusCounts.map(({ status, count }) => {
+                          const tone = statusTone(colors, status);
+                          return (
+                            <View
+                              key={status}
+                              style={[styles.statusBadge, { backgroundColor: tone.bg }]}
+                            >
+                              <Text style={[styles.statusBadgeText, { color: tone.text }]}>
+                                {count}
+                              </Text>
+                            </View>
+                          );
+                        })}
+                      </View>
+                    </>
                   ) : null}
                 </Pressable>
               );
@@ -291,7 +300,7 @@ function createStyles(colors: ThemeColors) {
   },
   cell: {
     width: "14.2857%",
-    minHeight: 90,
+    minHeight: 64,
     borderWidth: 0.5,
     borderColor: colors.faintLine,
     padding: 3,
@@ -307,20 +316,28 @@ function createStyles(colors: ThemeColors) {
   cellDayMuted: {
     color: colors.line,
   },
-  chip: {
+  cellTotal: {
+    color: colors.ink,
+    fontSize: 11,
+    fontWeight: "700",
+    marginTop: 2,
+  },
+  statusBadgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 2,
+    marginTop: 2,
+  },
+  statusBadge: {
     borderRadius: 4,
-    paddingHorizontal: 3,
-    paddingVertical: 2,
-    marginTop: 2,
+    minWidth: 16,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    alignItems: "center",
   },
-  chipText: {
-    fontSize: 9,
-    fontWeight: "600",
-  },
-  moreText: {
-    fontSize: 9,
-    color: colors.muted,
-    marginTop: 2,
+  statusBadgeText: {
+    fontSize: 11,
+    fontWeight: "700",
   },
 });
 }
