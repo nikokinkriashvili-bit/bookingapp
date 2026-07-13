@@ -32,14 +32,14 @@ Work top to bottom. Check items off here (`[ ]` → `[x]`, add the date). Each s
 - [ ] **2.2** 🖐 **Blocked on Niko.** Run the pre-flight cleanup queries first, review results, then run 011 in the Supabase SQL Editor. *Done = `select * from schema_migrations` lists 001–011.*
 - [x] **2.3** ⚙️ Housekeeping done (858475e): removed 4 unused beta deps (zero imports confirmed first); moved jest/jest-expo/@types/jest to devDependencies (an earlier install misplaced them). Verified: tsc/lint/jest clean, app boots with no console errors, production export succeeds.
 
-## Stage 3 — Intake speed + polish quick wins *(the <30s requirement)*
+## Stage 3 — Intake speed + polish quick wins *(the <30s requirement)* — all done except 3.5 (blocked on Niko)
 
 - [x] **3.1** ⚙️ Intake defaults done (f7dee2b): From = today + now rounded up to 15 min when no date param (`roundUpToNextQuarterHour`, unit tested).
 - [x] **3.2** ⚙️ Date/time quick chips (ea9eeaf) + numeric keyboards (f7dee2b) — **fully done.**
 - [x] **3.3** ⚙️ Accessibility quick pass done (a76852e): hitSlop on all 11 icon-only controls (steppers, ×, nav arrows, settings gear); accessibilityLabel/Role on the same; light-theme `muted` darkened #8A9099→#6E747D (~3.0:1 → ~4.7:1, computed).
 - [x] **3.4** ⚙️ Localization fixes done (8b1645d): `po.expectedDeliveryShort` key replaces the `.split(" (")` hack (L2); `common.to` renamed to `common.timeRangeSeparator` (L3).
 - [ ] **3.5** 🖐 Decision: month-grid 9px text redesign (count badges vs. denser chips) — pick a direction, then ⚙️ implement.
-- [ ] **3.6** ⚙️ Light up the two "materials" dashboard balloons with real spend from received POs (F1 — the data exists now; placeholders retire).
+- [x] **3.6** ⚙️ Materials balloons done (ab44887): real spend from received POs, split this-month/last-month; dead placeholder styles + i18n key removed.
 
 ## Stage 4 — Feature backlog *(Niko-approved order; one feature per step, stop-and-confirm between each)*
 
@@ -105,3 +105,4 @@ Every box in Stages 0–3 and 7, plus 4.1–4.4 + 4.6–4.8, plus 6.1–6.3, che
 | July 2026 | Stage 3.1 + 3.2 ✅ | Intake From-field now defaults to today+now-rounded (f7dee2b); numeric keyboards on all 4 schedule inputs. Combined with the earlier UX-clarity chips (ea9eeaf), Stage 3.2 is fully closed. |
 | July 2026 | Stage 3.4 ✅ | `po.expectedDeliveryShort` key + `common.to`→`common.timeRangeSeparator` rename (8b1645d) |
 | July 2026 | Stage 3.3 ✅ | hitSlop + accessibilityLabel on all 11 icon-only controls; light-theme `muted` darkened for AA contrast (a76852e) |
+| July 2026 | Stage 3.6 ✅ | Materials dashboard balloons now show real received-PO spend; dead placeholder code removed (ab44887) |
