@@ -5,17 +5,18 @@ Work top to bottom. Check items off here (`[ ]` → `[x]`, add the date). Each s
 
 - Deep detail lives in: [TECHNICAL_AUDIT.md](TECHNICAL_AUDIT.md) (gap analysis) and [audits/](audits/) (specialist findings). CLAUDE.md stays the build log.
 - Feature-gap proposals ([audits/feature-gap-analysis.md](audits/feature-gap-analysis.md)) were decided July 2026: F1/F2/F4/F5 merged below (3.6, 4.1b, 4.3-prereq, 4.3b), F6–F10 = Stage 4½, **F3 coating warranty rejected — do not build**.
+- UX clarity findings ([audits/ux-clarity.md](audits/ux-clarity.md), Audit 8): **C2, C1 (quick-chip half), C3, C4 done and committed (ea9eeaf)**. C1's quick-chip half satisfies the chip portion of Stage 3.2 below — see that line for what's still open. C5/C6 explicitly deferred, not folded into the numbered stages.
 - Importer/wholesaler module planning: [IMPORTER_MODULE_PLAN.md](IMPORTER_MODULE_PLAN.md) — feature proposals feeding Niko's importer TRD (5.3); builds as Stage 8 after the TRD is confirmed.
 - ⚙️ = code (Claude builds) · 🖐 = Niko action (dashboard/paperwork/decision) · 🧪 = verification gate
 - Standing rule per step: typecheck + lint clean, tested at 375px where visual, CLAUDE.md updated, committed. One step per commit unless marked as a batch.
 
 ---
 
-## Stage 0 — Land what's already done *(first session, blocks everything)*
+## Stage 0 — Land what's already done ✅ *(complete July 2026)*
 
-- [ ] **0.1** ⚙️ Commit the July bug-audit fixes currently sitting uncommitted in the working tree (migration 010 file, atomic stock wiring, PO mark-sent fix, calendar overlap, parseDecimal, jobActions seams, confirm/error surfacing, WhatsApp field, i18n additions, audit docs).
-- [ ] **0.2** 🖐 Run `supabase/010_atomic_stock.sql` in the Supabase SQL Editor. *Done = both statements succeed (see the file's note if the unique index fails).*
-- [ ] **0.3** 🖐 Two dashboard checks (5 min): Auth → email confirmation is **ON**; Database → note current backup settings. Record both in `audits/security-data-integrity.md` (S3 checkbox).
+- [x] **0.1** ⚙️ Commit the July bug-audit fixes (migration 010 file, atomic stock wiring, PO mark-sent fix, calendar overlap, parseDecimal, jobActions seams, confirm/error surfacing, WhatsApp field, i18n additions, audit docs).
+- [x] **0.2** 🖐 Run `supabase/010_atomic_stock.sql` in the Supabase SQL Editor.
+- [~] **0.3** Email confirmation confirmed **ON** (observed live: sign-up blocks login until confirmed). Backup-settings half still unconfirmed — 🖐 Niko still needs the Database dashboard check.
 
 ## Stage 1 — Safety net ✅ *(complete July 2026)*
 
@@ -34,7 +35,7 @@ Work top to bottom. Check items off here (`[ ]` → `[x]`, add the date). Each s
 ## Stage 3 — Intake speed + polish quick wins *(the <30s requirement)*
 
 - [ ] **3.1** ⚙️ Intake defaults: From = today + now rounded up to 15 min when no date param. ([audits/intake-speed.md](audits/intake-speed.md) R1 — biggest UX win in the app.)
-- [ ] **3.2** ⚙️ Date/time quick chips (Today/Tomorrow · Now/+1h/presets) + numeric keyboard on those fields (R2, R3).
+- [~] **3.2** ⚙️ Date/time quick chips — **done via the UX-clarity pass (ea9eeaf)**: Today/Tomorrow/Now/+1h/09:00/14:00 chips on all four schedule fields. Still open: numeric keyboard restriction on the raw text inputs themselves (R3).
 - [ ] **3.3** ⚙️ Accessibility quick pass ([audits/accessibility.md](audits/accessibility.md)): hitSlop ≥44pt on steppers/×/nav arrows; `accessibilityLabel` on icon-only buttons (new i18n keys, both languages); darken light-theme `muted` token to pass 4.5:1.
 - [ ] **3.4** ⚙️ Localization fixes ([audits/localization.md](audits/localization.md)): `po.expectedDeliveryShort` key replaces the `.split(" (")` hack (L2); rename `common.to` → time-range separator key (L3).
 - [ ] **3.5** 🖐 Decision: month-grid 9px text redesign (count badges vs. denser chips) — pick a direction, then ⚙️ implement.
@@ -98,3 +99,5 @@ Every box in Stages 0–3 and 7, plus 4.1–4.4 + 4.6–4.8, plus 6.1–6.3, che
 | July 2026 | Audits complete | Bug audit fixes built; 6 specialist audits + feature-gap analysis in `audits/` |
 | July 2026 | Stage 0 ✅ | Audit fixes committed + pushed (88a413d); migration 010 run by Niko |
 | July 2026 | Stage 1 ✅ | CI + 38 unit tests, error boundary, auth gate, error-vs-empty states (03b3efb, c134b77, e94c1de) |
+| July 2026 | Ad-hoc fixes (outside the numbered stages) | Real-phone testing surfaced 2 bugs: web dark-mode background (d2e2da8) and an unclickable tab bar on mobile touch + the Tabs scene background (fa5eb1f); CI itself was failing on Node 20's Metro floor, bumped to Node 22 (94004e6); ARCHITECTURE.md added as a hand-maintained navigation index (9d0d132) |
+| July 2026 | UX clarity pass ✅ | C2 (field labels), C1 quick-chip half (Today/Tomorrow/Now/+1h/09:00/14:00), C3 (scroll-to-error), C4 (new-vehicle framing copy) — all committed (ea9eeaf). C5/C6 deferred. Overlaps/closes the chip half of Stage 3.2. |
