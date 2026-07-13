@@ -130,7 +130,13 @@ export default function CalendarMonth() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable style={styles.navButton} onPress={() => setMonth((m) => addMonths(m, -1))}>
+        <Pressable
+          style={styles.navButton}
+          onPress={() => setMonth((m) => addMonths(m, -1))}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={t("calendar.prevMonth")}
+        >
           <Text style={styles.navButtonText}>{"<"}</Text>
         </Pressable>
         <Text style={styles.monthText}>
@@ -139,7 +145,13 @@ export default function CalendarMonth() {
             year: "numeric",
           })}
         </Text>
-        <Pressable style={styles.navButton} onPress={() => setMonth((m) => addMonths(m, 1))}>
+        <Pressable
+          style={styles.navButton}
+          onPress={() => setMonth((m) => addMonths(m, 1))}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={t("calendar.nextMonth")}
+        >
           <Text style={styles.navButtonText}>{">"}</Text>
         </Pressable>
         <CalendarFiltersButton />

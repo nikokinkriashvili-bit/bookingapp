@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useThemeColors } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import { useBusiness } from "@/providers/BusinessProvider";
+import { useT } from "@/providers/LanguageProvider";
 import { QuickSettingsDrawer } from "@/components/QuickSettingsDrawer";
 
 // Floating trigger for the quick-settings drawer (theme/language/sign-out) —
@@ -26,6 +27,7 @@ export function QuickSettingsButton() {
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
   const { business } = useBusiness();
+  const t = useT();
   const [open, setOpen] = useState(false);
 
   if (!session || !business) return null;
@@ -38,6 +40,9 @@ export function QuickSettingsButton() {
           { top: insets.top + 8, backgroundColor: colors.surface, borderColor: colors.line },
         ]}
         onPress={() => setOpen(true)}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        accessibilityRole="button"
+        accessibilityLabel={t("quick.title")}
       >
         <Ionicons name="settings-outline" size={20} color={colors.inkSoft} />
       </Pressable>

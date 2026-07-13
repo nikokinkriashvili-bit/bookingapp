@@ -341,7 +341,13 @@ export default function Settings() {
               value={service.priceGel}
               onChangeText={(v) => updateService(index, "priceGel", v)}
             />
-            <Pressable onPress={() => removeService(index)} style={styles.removeButton}>
+            <Pressable
+              onPress={() => removeService(index)}
+              style={styles.removeButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.remove")}
+            >
               <Text style={styles.removeButtonText}>×</Text>
             </Pressable>
           </View>
@@ -381,7 +387,13 @@ export default function Settings() {
                 {member.user_id ? t("staff.active") : t("staff.pending")}
               </Text>
             </View>
-            <Pressable onPress={() => removeStaff(member.id)} style={styles.removeButton}>
+            <Pressable
+              onPress={() => removeStaff(member.id)}
+              style={styles.removeButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.remove")}
+            >
               <Text style={styles.removeButtonText}>×</Text>
             </Pressable>
           </View>

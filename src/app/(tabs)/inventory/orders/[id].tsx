@@ -266,7 +266,12 @@ export default function PurchaseOrderDetail() {
                   {item.products?.name ?? "—"}
                 </Text>
                 {isDraft ? (
-                  <Pressable onPress={() => removeItem(item.id)}>
+                  <Pressable
+                    onPress={() => removeItem(item.id)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={t("common.remove")}
+                  >
                     <Text style={styles.removeText}>×</Text>
                   </Pressable>
                 ) : null}

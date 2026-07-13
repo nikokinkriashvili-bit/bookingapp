@@ -51,7 +51,11 @@ export const lightColors: ThemeColors = {
 
   ink: "#16181D",
   inkSoft: "#4A5058",
-  muted: "#8A9099",
+  // Darkened from #8A9099 (audits/accessibility.md A4): the original was
+  // ~3.0:1 on white, failing AA (4.5:1) for the data-bearing text it
+  // styles (last-visit dates, SKUs, timestamps) -- not just decorative
+  // hints. #6E747D measures ~4.7:1, same hierarchy, passes.
+  muted: "#6E747D",
 
   line: "#DFE3E8",
   faintLine: "#F0F2F5",

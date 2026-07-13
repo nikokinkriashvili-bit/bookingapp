@@ -155,7 +155,13 @@ export default function CalendarDay() {
           {"< "}
           {t("calendar.month")}
         </Link>
-        <Pressable style={styles.navButton} onPress={() => goToDay(-1)}>
+        <Pressable
+          style={styles.navButton}
+          onPress={() => goToDay(-1)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={t("calendar.prevDay")}
+        >
           <Text style={styles.navButtonText}>{"<"}</Text>
         </Pressable>
         <View style={styles.headerCenter}>
@@ -170,7 +176,13 @@ export default function CalendarDay() {
             <Text style={styles.todayLink}>{t("calendar.today")}</Text>
           </Pressable>
         </View>
-        <Pressable style={styles.navButton} onPress={() => goToDay(1)}>
+        <Pressable
+          style={styles.navButton}
+          onPress={() => goToDay(1)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={t("calendar.nextDay")}
+        >
           <Text style={styles.navButtonText}>{">"}</Text>
         </Pressable>
         <CalendarFiltersButton />

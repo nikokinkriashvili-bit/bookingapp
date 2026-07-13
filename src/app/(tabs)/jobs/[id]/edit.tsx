@@ -324,6 +324,9 @@ export default function EditJob() {
                 <Pressable
                   style={styles.stepButton}
                   disabled={consumptionBusy}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("common.decreaseQty")}
                   onPress={() =>
                     runConsumption(() =>
                       changeJobProductQty(
@@ -341,6 +344,9 @@ export default function EditJob() {
                 <Pressable
                   style={styles.stepButton}
                   disabled={consumptionBusy}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("common.increaseQty")}
                   onPress={() =>
                     runConsumption(() =>
                       changeJobProductQty(
@@ -357,6 +363,9 @@ export default function EditJob() {
               </View>
               <Pressable
                 disabled={consumptionBusy}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel={t("common.remove")}
                 onPress={() =>
                   runConsumption(() =>
                     removeJobProductRow(row.id, row.product_id, Number(row.qty))

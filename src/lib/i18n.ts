@@ -142,6 +142,12 @@ const en = {
   "calendar.more": "more",
   "calendar.vehicleFallback": "Vehicle",
   "calendar.changeStatus": "Change status to...",
+  "calendar.prevMonth": "Previous month",
+  "calendar.nextMonth": "Next month",
+  "calendar.prevDay": "Previous day",
+  "calendar.nextDay": "Next day",
+  "common.decreaseQty": "Decrease quantity",
+  "common.increaseQty": "Increase quantity",
 
   // Filters
   "filters.title": "Filters",
@@ -435,6 +441,12 @@ const ka: Record<StringKey, string> = {
   "calendar.more": "მეტი",
   "calendar.vehicleFallback": "ავტომობილი",
   "calendar.changeStatus": "სტატუსის შეცვლა...",
+  "calendar.prevMonth": "წინა თვე",
+  "calendar.nextMonth": "შემდეგი თვე",
+  "calendar.prevDay": "წინა დღე",
+  "calendar.nextDay": "შემდეგი დღე",
+  "common.decreaseQty": "რაოდენობის შემცირება",
+  "common.increaseQty": "რაოდენობის გაზრდა",
 
   "filters.title": "ფილტრები",
   "filters.status": "სტატუსი",
