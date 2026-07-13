@@ -22,7 +22,8 @@ When the importer TRD lands, reintroduce it as a status-transition RPC (security
 The policy validates only that the **vehicle** belongs to your business; `customer_id` is unchecked. A member of business A who somehow learns a business-B customer UUID could link that customer to A's vehicle (unguessable UUIDs make exploitation unlikely; the asymmetry is still wrong).
 **Fix:** extend the policy so both sides must be in `member_business_ids()` (see migration 011 draft below).
 
-### S3 — Email confirmation must be ON (dashboard check, 30 seconds) 🟠
+### S3 — Email confirmation must be ON ✅ *(verified live, July 2026)*
+Confirmed via an actual sign-up attempt during UX testing: the app blocked login with "check your email to confirm your account, then log in" — email confirmation is enforced. Original text preserved below for context.
 `claim_staff_membership()` trusts `auth.email()`. With confirmation off, an attacker who signs up using a staff member's email would inherit their access. **Verify in Supabase → Auth → Providers → Email that "Confirm email" is enabled.** Status: ☐ verified by Niko on ____.
 
 ### S4 — Self-signup is open during the pilot 🟡
@@ -135,6 +136,6 @@ on conflict do nothing;
 
 ## Follow-ups
 - ☐ Ship migration 011 (write the real file when starting this work; the draft above is the spec).
-- ☐ Niko: S3 dashboard check (email confirmation ON) + S4 decision (open vs. invite-only signup).
+- ☐ Niko: S4 decision (open vs. invite-only signup) + the backup-settings half of Stage 0.3 (S3 email-confirmation half is now verified — see above).
 - ☐ Feature backlog note: services soft-delete (`archived` flag) instead of hard delete (D3).
 - ☐ Importer TRD phase: supplier status-transition RPC replaces the dropped S1 policy.
