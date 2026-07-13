@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { generateBogPaymentLink, sendWhatsAppMessage } from "@/lib/integrations";
+import { createRebookingReminder } from "@/lib/rebookingReminders";
 import type { JobStatus } from "@/lib/jobStatus";
 
 // Single place that maps a job's new status to its integration side effects
@@ -13,6 +14,7 @@ export async function fireStatusSeams(jobId: string, status: JobStatus): Promise
   } else if (status === "complete") {
     await sendWhatsAppMessage("job_complete", jobId);
     await generateBogPaymentLink(jobId);
+    await createRebookingReminder(jobId);
   } else if (status === "paid") {
     await sendWhatsAppMessage("payment_confirmed", jobId);
   }

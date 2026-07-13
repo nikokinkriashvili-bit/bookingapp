@@ -46,6 +46,9 @@ export default function Index() {
         <Link href="/customers" style={[styles.outlineButton, styles.navButton]}>
           {t("home.customers")}
         </Link>
+        <Link href="/reminders" style={[styles.outlineButton, styles.navButton]}>
+          {t("home.reminders")}
+        </Link>
       </View>
 
       <DashboardStats />
@@ -92,10 +95,12 @@ function createStyles(colors: ThemeColors) {
   },
   navRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
   },
   navButton: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: "45%",
   },
 });
 }

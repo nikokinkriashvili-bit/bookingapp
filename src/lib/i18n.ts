@@ -32,6 +32,7 @@ const en = {
   "home.calendar": "Calendar",
   "home.vehicles": "Vehicles",
   "home.customers": "Customers",
+  "home.reminders": "Reminders",
   "home.signOut": "Sign out",
 
   // Auth
@@ -321,6 +322,15 @@ const en = {
   "settings.saved": "Saved.",
   "settings.whatsapp": "WhatsApp number",
   "settings.whatsappHint": "Used to message customers once WhatsApp is connected.",
+  "settings.serviceReminderDays": "Remind customer to rebook after (days, optional)",
+  "settings.serviceReminderDaysPlaceholder": "e.g. 90",
+
+  // Rebooking reminders (roadmap 4.2)
+  "reminders.title": "Reminders",
+  "reminders.empty": "No reminders due.",
+  "reminders.sendWhatsApp": "Send WhatsApp",
+  "reminders.bookNow": "Book now",
+  "reminders.dismiss": "Dismiss",
 
   // Staff
   "settings.staff": "Staff",
@@ -353,6 +363,7 @@ const ka: Record<StringKey, string> = {
   "home.calendar": "კალენდარი",
   "home.vehicles": "ავტომობილები",
   "home.customers": "კლიენტები",
+  "home.reminders": "შეხსენებები",
   "home.signOut": "გასვლა",
 
   "auth.logIn": "შესვლა",
@@ -620,6 +631,14 @@ const ka: Record<StringKey, string> = {
   "settings.saved": "შენახულია.",
   "settings.whatsapp": "WhatsApp ნომერი",
   "settings.whatsappHint": "გამოიყენება კლიენტებთან დასაკავშირებლად, როცა WhatsApp ჩაირთვება.",
+  "settings.serviceReminderDays": "შეახსენე კლიენტს გამეორება (დღეები, სურვილისამებრ)",
+  "settings.serviceReminderDaysPlaceholder": "მაგ. 90",
+
+  "reminders.title": "შეხსენებები",
+  "reminders.empty": "აქტიური შეხსენება არ არის.",
+  "reminders.sendWhatsApp": "WhatsApp გაგზავნა",
+  "reminders.bookNow": "შეკვეთა ახლავე",
+  "reminders.dismiss": "მოხსნა",
 
   "settings.staff": "თანამშრომლები",
   "staff.add": "+ თანამშრომლის დამატება",

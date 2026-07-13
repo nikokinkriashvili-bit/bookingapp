@@ -8,7 +8,8 @@ export type WhatsAppEvent =
   | "job_started"
   | "job_complete"
   | "payment_request"
-  | "payment_confirmed";
+  | "payment_confirmed"
+  | "rebooking_reminder";
 
 // TODO(TRD §5.5, §7.1): call a Supabase Edge Function that sends the approved
 // WhatsApp template for `event` to the job's customer, and logs the send in

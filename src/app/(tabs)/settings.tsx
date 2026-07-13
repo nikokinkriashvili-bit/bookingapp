@@ -25,6 +25,7 @@ type ServiceEdit = {
   name: string;
   durationMinutes: string;
   priceGel: string;
+  reminderDays: string; // empty = no rebooking reminder for this service
 };
 
 type StaffRow = {
@@ -79,7 +80,7 @@ export default function Settings() {
       loadStaff();
       supabase
         .from("services")
-        .select("id, name, duration_minutes, price_gel")
+        .select("id, name, duration_minutes, price_gel, reminder_interval_days")
         .eq("business_id", business.id)
         .order("name")
         .then(({ data }) => {
@@ -89,6 +90,8 @@ export default function Settings() {
               name: s.name,
               durationMinutes: String(s.duration_minutes),
               priceGel: s.price_gel != null ? String(s.price_gel) : "",
+              reminderDays:
+                s.reminder_interval_days != null ? String(s.reminder_interval_days) : "",
             }))
           );
           setLoading(false);
@@ -164,7 +167,10 @@ export default function Settings() {
   };
 
   const addService = () => {
-    setServices([...services, { id: null, name: "", durationMinutes: "30", priceGel: "" }]);
+    setServices([
+      ...services,
+      { id: null, name: "", durationMinutes: "30", priceGel: "", reminderDays: "" },
+    ]);
   };
 
   const onSave = async () => {
@@ -215,6 +221,9 @@ export default function Settings() {
         name: service.name.trim(),
         duration_minutes: parseIntOr(service.durationMinutes, 0),
         price_gel: parseDecimal(service.priceGel),
+        reminder_interval_days: service.reminderDays.trim()
+          ? parseIntOr(service.reminderDays, 0)
+          : null,
       };
       const { error: serviceError } = service.id
         ? await supabase.from("services").update(values).eq("id", service.id)
@@ -320,36 +329,48 @@ export default function Settings() {
           </View>
         ) : null}
         {services.map((service, index) => (
-          <View key={service.id ?? `new-${index}`} style={styles.serviceRow}>
-            <TextInput
-              style={[styles.input, styles.serviceName]}
-              placeholder={t("onboarding.serviceName")}
-              value={service.name}
-              onChangeText={(v) => updateService(index, "name", v)}
-            />
-            <TextInput
-              style={[styles.input, styles.serviceSmall]}
-              placeholder={t("onboarding.serviceMin")}
-              keyboardType="numeric"
-              value={service.durationMinutes}
-              onChangeText={(v) => updateService(index, "durationMinutes", v)}
-            />
-            <TextInput
-              style={[styles.input, styles.serviceSmall]}
-              placeholder={t("onboarding.serviceGel")}
-              keyboardType="numeric"
-              value={service.priceGel}
-              onChangeText={(v) => updateService(index, "priceGel", v)}
-            />
-            <Pressable
-              onPress={() => removeService(index)}
-              style={styles.removeButton}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              accessibilityRole="button"
-              accessibilityLabel={t("common.remove")}
-            >
-              <Text style={styles.removeButtonText}>×</Text>
-            </Pressable>
+          <View key={service.id ?? `new-${index}`} style={styles.serviceBlock}>
+            <View style={styles.serviceRow}>
+              <TextInput
+                style={[styles.input, styles.serviceName]}
+                placeholder={t("onboarding.serviceName")}
+                value={service.name}
+                onChangeText={(v) => updateService(index, "name", v)}
+              />
+              <TextInput
+                style={[styles.input, styles.serviceSmall]}
+                placeholder={t("onboarding.serviceMin")}
+                keyboardType="numeric"
+                value={service.durationMinutes}
+                onChangeText={(v) => updateService(index, "durationMinutes", v)}
+              />
+              <TextInput
+                style={[styles.input, styles.serviceSmall]}
+                placeholder={t("onboarding.serviceGel")}
+                keyboardType="numeric"
+                value={service.priceGel}
+                onChangeText={(v) => updateService(index, "priceGel", v)}
+              />
+              <Pressable
+                onPress={() => removeService(index)}
+                style={styles.removeButton}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel={t("common.remove")}
+              >
+                <Text style={styles.removeButtonText}>×</Text>
+              </Pressable>
+            </View>
+            <View style={styles.reminderRow}>
+              <Text style={styles.reminderLabel}>{t("settings.serviceReminderDays")}</Text>
+              <TextInput
+                style={[styles.input, styles.reminderInput]}
+                placeholder={t("settings.serviceReminderDaysPlaceholder")}
+                keyboardType="numeric"
+                value={service.reminderDays}
+                onChangeText={(v) => updateService(index, "reminderDays", v)}
+              />
+            </View>
           </View>
         ))}
         <Pressable style={styles.addButton} onPress={addService}>
@@ -530,10 +551,29 @@ function createStyles(colors: ThemeColors) {
   closedText: {
     color: colors.muted,
   },
+  serviceBlock: {
+    gap: 4,
+  },
   serviceRow: {
     flexDirection: "row",
     gap: 8,
     alignItems: "center",
+  },
+  reminderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  reminderLabel: {
+    flex: 1,
+    fontSize: 12,
+    color: colors.muted,
+  },
+  reminderInput: {
+    width: 70,
+    padding: 8,
+    fontSize: 14,
+    textAlign: "center",
   },
   serviceName: {
     flex: 2,
