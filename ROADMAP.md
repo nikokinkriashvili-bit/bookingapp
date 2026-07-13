@@ -43,7 +43,7 @@ Work top to bottom. Check items off here (`[ ]` → `[x]`, add the date). Each s
 
 ## Stage 4 — Feature backlog *(Niko-approved order; one feature per step, stop-and-confirm between each)*
 
-- [ ] **4.1** ⚙️ Photo capture + before/after gallery on vehicle profile. **Requirements:** Supabase Storage with per-business RLS on the bucket; client-side compression from day one (~300KB/photo — see [audits/cost-scaling.md](audits/cost-scaling.md)); R2 migration seam documented.
+- [~] **4.1** ⚙️ Photo capture + before/after gallery done (1ae75bf): `vehicle_photos` table + private Storage bucket (migration 012, **not yet run**), client-side resize/compress to ~300KB before upload, before/after gallery on the vehicle profile, R2 migration seam isolated to `src/lib/vehiclePhotos.ts`. **Blocked on Niko for two things:** (a) run migration 012, (b) confirm the actual capture flow on a real phone — camera/photo-library access can't be tested in the browser preview.
 - [ ] **4.1b** ⚙️ Vehicle condition check-in (F2): per-job damage record at intake — body/glass/wheels/interior checklist + note + tagged photos (rides on 4.1); shown on the job and included in the 4.7 receipt.
 - [ ] **4.2** ⚙️ Rebooking/maintenance reminders (BRD §5.1): reminder schedule per job/service, due-reminders surface for the owner; WhatsApp send stays a seam. *(Coating-warranty variant F3 rejected by Niko — generic reminders only.)*
 - [ ] **4.3** ⚙️ Public booking link (`/book/<slug>`, BK-01): public route (carve-out in the 1.4 auth gate), business slug, service+slot picker respecting working hours, booking lands as `booked` job. Anti-abuse via Edge Function rate limit. **Prerequisite (F4): `business_closures` table (holiday/vacation date ranges) respected by the slot picker and the calendar.**
@@ -108,3 +108,4 @@ Every box in Stages 0–3 and 7, plus 4.1–4.4 + 4.6–4.8, plus 6.1–6.3, che
 | July 2026 | Stage 3.6 ✅ | Materials dashboard balloons now show real received-PO spend; dead placeholder code removed (ab44887) |
 | July 2026 | Stage 2.2 ✅ | Migration 011 run by Niko in Supabase — Stage 2 fully complete |
 | July 2026 | Stage 3.5 ✅ | Month-grid redesigned to total GEL + status-count badges per Niko's brief (7a8519a) — Stage 3 fully complete |
+| July 2026 | Stage 4.1 (code done, needs Niko) | Photo capture + before/after gallery built (1ae75bf) — migration 012 not yet run, real-device capture flow not yet confirmed |
