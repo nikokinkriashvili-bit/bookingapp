@@ -16,7 +16,7 @@ import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
 import { FetchError } from "@/components/FetchError";
-import { parseDateAndTime, toDateKey, toTimeString } from "@/lib/calendarDate";
+import { addDays, parseDateAndTime, toDateKey, toTimeString } from "@/lib/calendarDate";
 import { STATUS_ORDER, statusLabelKey, type JobStatus } from "@/lib/jobStatus";
 import { fireStatusSeams } from "@/lib/jobActions";
 import { parseDecimal, parseDecimalOr } from "@/lib/number";
@@ -29,6 +29,13 @@ import {
   type Payment,
   type PaymentMethod,
 } from "@/lib/payments";
+import {
+  quoteDisplayStatus,
+  respondToQuote,
+  saveQuoteDraft,
+  sendQuote,
+  type QuoteStatus,
+} from "@/lib/quotes";
 import {
   addJobProduct,
   changeJobProductQty,
@@ -67,6 +74,11 @@ type JobDetail = {
   scheduled_end: string;
   price_total: number | null;
   assigned_staff_id: string | null;
+  quote_price: number | null;
+  quote_description: string | null;
+  quote_status: QuoteStatus | null;
+  quote_sent_at: string | null;
+  quote_expires_at: string | null;
   vehicles: { plate_number: string; make: string | null; model: string | null } | null;
   customers: { name: string; phone: string } | null;
 };
@@ -128,6 +140,14 @@ export default function EditJob() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [paymentBusy, setPaymentBusy] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+
+  const [quotePrice, setQuotePrice] = useState("");
+  const [quoteDescription, setQuoteDescription] = useState("");
+  const [quoteStatus, setQuoteStatus] = useState<QuoteStatus | null>(null);
+  const [quoteSentAt, setQuoteSentAt] = useState<string | null>(null);
+  const [quoteExpiresAt, setQuoteExpiresAt] = useState<string | null>(null);
+  const [quoteBusy, setQuoteBusy] = useState(false);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
 
   const loadConsumed = useCallback(async () => {
     if (!id) return;
@@ -196,7 +216,7 @@ export default function EditJob() {
     supabase
       .from("jobs")
       .select(
-        "id, vehicle_id, status, service_ids, scheduled_slot, scheduled_end, price_total, assigned_staff_id, vehicles(plate_number, make, model), customers(name, phone)"
+        "id, vehicle_id, status, service_ids, scheduled_slot, scheduled_end, price_total, assigned_staff_id, quote_price, quote_description, quote_status, quote_sent_at, quote_expires_at, vehicles(plate_number, make, model), customers(name, phone)"
       )
       .eq("id", id)
       .single()
@@ -217,6 +237,11 @@ export default function EditJob() {
         setToDate(toDateKey(end));
         setToTime(toTimeString(end));
         setPrice(j.price_total ? String(j.price_total) : "");
+        setQuotePrice(j.quote_price != null ? String(j.quote_price) : "");
+        setQuoteDescription(j.quote_description ?? "");
+        setQuoteStatus(j.quote_status);
+        setQuoteSentAt(j.quote_sent_at);
+        setQuoteExpiresAt(j.quote_expires_at);
         setLoading(false);
       });
     getJobCondition(id).then(({ condition: existing }) => {
@@ -305,6 +330,57 @@ export default function EditJob() {
     if (autoPaid) setStatus("paid");
     loadPayments();
   };
+
+  const displayQuoteStatus = quoteDisplayStatus({
+    quote_price: null,
+    quote_description: null,
+    quote_status: quoteStatus,
+    quote_sent_at: quoteSentAt,
+    quote_expires_at: quoteExpiresAt,
+  });
+
+  const runQuote = async (action: () => Promise<string | null>) => {
+    if (!job) return;
+    setQuoteError(null);
+    setQuoteBusy(true);
+    const actionError = await action();
+    setQuoteBusy(false);
+    if (actionError) {
+      setQuoteError(actionError);
+      return;
+    }
+  };
+
+  const onSaveQuoteDraft = () =>
+    runQuote(async () => {
+      const err = await saveQuoteDraft(job!.id, parseDecimal(quotePrice), quoteDescription);
+      if (!err) setQuoteStatus("draft");
+      return err;
+    });
+
+  const onSendQuote = () =>
+    runQuote(async () => {
+      const err = await sendQuote(job!.id, parseDecimal(quotePrice), quoteDescription);
+      if (!err) {
+        const now = new Date();
+        setQuoteStatus("sent");
+        setQuoteSentAt(now.toISOString());
+        setQuoteExpiresAt(addDays(now, 3).toISOString());
+      }
+      return err;
+    });
+
+  const onRespondQuote = (response: "accepted" | "declined") =>
+    runQuote(async () => {
+      const priceNum = parseDecimal(quotePrice);
+      const err = await respondToQuote(job!.id, response, priceNum);
+      if (!err) {
+        setQuoteStatus(response);
+        // Accepting locks the quoted price in as the job price.
+        if (response === "accepted" && priceNum != null) setPrice(String(priceNum));
+      }
+      return err;
+    });
 
   const toggleService = (serviceId: string) => {
     setSelectedServiceIds((prev) =>
@@ -579,6 +655,81 @@ export default function EditJob() {
           value={price}
           onChangeText={setPrice}
         />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>{t("quote.title")}</Text>
+        <Text style={styles.quoteHint}>{t("quote.hint")}</Text>
+
+        {displayQuoteStatus !== "none" ? (
+          <View style={styles.quoteStatusRow}>
+            <Text style={styles.quoteStatusLabel}>
+              {t(`quote.status.${displayQuoteStatus}` as StringKey)}
+            </Text>
+            {quoteExpiresAt && (displayQuoteStatus === "sent" || displayQuoteStatus === "expired") ? (
+              <Text style={styles.quoteExpiry}>
+                {t("quote.validUntil")} {toDateKey(new Date(quoteExpiresAt))}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
+
+        <TextInput
+          style={[styles.input, styles.quoteDescriptionInput]}
+          placeholder={t("quote.descriptionPlaceholder")}
+          multiline
+          value={quoteDescription}
+          onChangeText={setQuoteDescription}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder={t("quote.pricePlaceholder")}
+          keyboardType="numeric"
+          value={quotePrice}
+          onChangeText={setQuotePrice}
+        />
+
+        <View style={styles.quoteActionRow}>
+          <Pressable
+            style={styles.quoteSecondaryButton}
+            onPress={onSaveQuoteDraft}
+            disabled={quoteBusy}
+          >
+            <Text style={styles.quoteSecondaryText}>{t("quote.saveDraft")}</Text>
+          </Pressable>
+          <Pressable
+            style={styles.quotePrimaryButton}
+            onPress={onSendQuote}
+            disabled={quoteBusy}
+          >
+            <Text style={styles.quotePrimaryText}>
+              {displayQuoteStatus === "none" || displayQuoteStatus === "draft"
+                ? t("quote.send")
+                : t("quote.sendAgain")}
+            </Text>
+          </Pressable>
+        </View>
+
+        {displayQuoteStatus === "sent" || displayQuoteStatus === "expired" ? (
+          <View style={styles.quoteActionRow}>
+            <Pressable
+              style={styles.quoteDeclineButton}
+              onPress={() => onRespondQuote("declined")}
+              disabled={quoteBusy}
+            >
+              <Text style={styles.quoteDeclineText}>{t("quote.markDeclined")}</Text>
+            </Pressable>
+            <Pressable
+              style={styles.quoteAcceptButton}
+              onPress={() => onRespondQuote("accepted")}
+              disabled={quoteBusy}
+            >
+              <Text style={styles.quoteAcceptText}>{t("quote.markAccepted")}</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {quoteError ? <Text style={styles.error}>{quoteError}</Text> : null}
       </View>
 
       <View style={styles.section}>
@@ -959,6 +1110,83 @@ function createStyles(colors: ThemeColors) {
   consumptionHint: {
     fontSize: 13,
     color: colors.muted,
+  },
+  quoteHint: {
+    fontSize: 12,
+    color: colors.muted,
+  },
+  quoteStatusRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 2,
+  },
+  quoteStatusLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.ink,
+  },
+  quoteExpiry: {
+    fontSize: 13,
+    color: colors.inkSoft,
+  },
+  quoteDescriptionInput: {
+    minHeight: 60,
+    textAlignVertical: "top",
+  },
+  quoteActionRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  quoteSecondaryButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  quoteSecondaryText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  quotePrimaryButton: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  quotePrimaryText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  quoteAcceptButton: {
+    flex: 1,
+    backgroundColor: colors.success,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  quoteAcceptText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  quoteDeclineButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.danger,
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  quoteDeclineText: {
+    color: colors.danger,
+    fontSize: 14,
+    fontWeight: "600",
   },
   balanceRow: {
     flexDirection: "row",
