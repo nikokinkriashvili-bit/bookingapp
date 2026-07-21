@@ -19,6 +19,7 @@ import { useCalendarFilters } from "@/providers/CalendarFilterProvider";
 import { STATUS_ORDER, statusTone, summarizeJobs, type JobStatus } from "@/lib/jobStatus";
 import { formatGel, localeFor, type StringKey } from "@/lib/i18n";
 import { addDays, addMonths, startOfDay, startOfMonth, toDateKey } from "@/lib/calendarDate";
+import { isDateClosed, listClosures, type Closure } from "@/lib/closures";
 
 const WEEKDAY_HEADER = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
@@ -45,6 +46,7 @@ export default function CalendarMonth() {
   const { isJobVisible } = useCalendarFilters();
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
   const [jobs, setJobs] = useState<JobRow[]>([]);
+  const [closures, setClosures] = useState<Closure[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -55,20 +57,27 @@ export default function CalendarMonth() {
     const rangeEnd = addDays(rangeStart, 42);
     // Overlap query so multi-day jobs that start before the visible grid but
     // run into it are still fetched.
-    const { data, error: fetchError } = await supabase
-      .from("jobs")
-      .select(
-        "status, scheduled_slot, scheduled_end, price_total, service_ids, assigned_staff_id, vehicles(make, model)"
-      )
-      .eq("business_id", business.id)
-      .lt("scheduled_slot", rangeEnd.toISOString())
-      .gt("scheduled_end", rangeStart.toISOString());
-    if (fetchError) {
+    const [jobsResult, closuresResult] = await Promise.all([
+      supabase
+        .from("jobs")
+        .select(
+          "status, scheduled_slot, scheduled_end, price_total, service_ids, assigned_staff_id, vehicles(make, model)"
+        )
+        .eq("business_id", business.id)
+        .lt("scheduled_slot", rangeEnd.toISOString())
+        .gt("scheduled_end", rangeStart.toISOString()),
+      listClosures(business.id, {
+        start: toDateKey(rangeStart),
+        end: toDateKey(addDays(rangeStart, 41)),
+      }),
+    ]);
+    if (jobsResult.error || closuresResult.error) {
       setError(true);
       setLoading(false);
       return;
     }
-    setJobs((data as unknown as JobRow[]) ?? []);
+    setJobs((jobsResult.data as unknown as JobRow[]) ?? []);
+    setClosures(closuresResult.closures);
     setLoading(false);
   }, [business, month]);
 
@@ -183,6 +192,7 @@ export default function CalendarMonth() {
               const key = toDateKey(date);
               const dayJobs = jobsByDate[key] ?? [];
               const isCurrentMonth = date.getMonth() === month.getMonth();
+              const closed = isDateClosed(key, closures);
               // Redesign per audits/accessibility.md A2 + Niko: the old per-job
               // chips truncated vehicle names into an unreadable 9px line and
               // could never legibly fit more than a couple per cell. Replaced
@@ -198,12 +208,21 @@ export default function CalendarMonth() {
               return (
                 <Pressable
                   key={key}
-                  style={[styles.cell, key === today && styles.cellToday]}
+                  style={[
+                    styles.cell,
+                    key === today && styles.cellToday,
+                    closed && styles.cellClosed,
+                  ]}
                   onPress={() => router.push(`/calendar/${key}`)}
                 >
                   <Text style={[styles.cellDay, !isCurrentMonth && styles.cellDayMuted]}>
                     {date.getDate()}
                   </Text>
+                  {closed ? (
+                    <Text style={styles.cellClosedLabel} numberOfLines={1}>
+                      {t("common.closed")}
+                    </Text>
+                  ) : null}
                   {dayJobs.length > 0 ? (
                     <>
                       <Text style={styles.cellTotal} numberOfLines={1}>
@@ -307,6 +326,15 @@ function createStyles(colors: ThemeColors) {
   },
   cellToday: {
     backgroundColor: colors.primaryFaint,
+  },
+  cellClosed: {
+    backgroundColor: colors.faintLine,
+  },
+  cellClosedLabel: {
+    color: colors.muted,
+    fontSize: 9,
+    fontWeight: "600",
+    marginTop: 2,
   },
   cellDay: {
     color: colors.ink,

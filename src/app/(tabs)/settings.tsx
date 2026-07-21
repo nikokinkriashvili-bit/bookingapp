@@ -19,6 +19,12 @@ import type { StringKey } from "@/lib/i18n";
 import { WEEKDAYS, type Weekday, type WorkingHours } from "@/lib/businessTypes";
 import { parseDecimal, parseIntOr } from "@/lib/number";
 import { confirmAsync } from "@/lib/confirm";
+import {
+  createClosure,
+  deleteClosure,
+  listClosures,
+  type Closure,
+} from "@/lib/closures";
 
 type ServiceEdit = {
   id: string | null; // null = newly added, not yet in the DB
@@ -54,6 +60,12 @@ export default function Settings() {
   const [staffPhone, setStaffPhone] = useState("");
   const [staffError, setStaffError] = useState<string | null>(null);
   const [staffSubmitting, setStaffSubmitting] = useState(false);
+  const [closures, setClosures] = useState<Closure[]>([]);
+  const [closureStart, setClosureStart] = useState("");
+  const [closureEnd, setClosureEnd] = useState("");
+  const [closureReason, setClosureReason] = useState("");
+  const [closureError, setClosureError] = useState<string | null>(null);
+  const [closureSubmitting, setClosureSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -69,6 +81,12 @@ export default function Settings() {
       .then(({ data }) => setStaffList(data ?? []));
   }, [business]);
 
+  const loadClosures = useCallback(async () => {
+    if (!business) return;
+    const { closures: rows } = await listClosures(business.id);
+    setClosures(rows);
+  }, [business]);
+
   useFocusEffect(
     useCallback(() => {
       if (!business) return;
@@ -78,6 +96,7 @@ export default function Settings() {
       setDeletedServiceIds([]);
       setSaved(false);
       loadStaff();
+      loadClosures();
       supabase
         .from("services")
         .select("id, name, duration_minutes, price_gel, reminder_interval_days")
@@ -96,7 +115,7 @@ export default function Settings() {
           );
           setLoading(false);
         });
-    }, [business, loadStaff])
+    }, [business, loadStaff, loadClosures])
   );
 
   const addStaff = async () => {
@@ -142,6 +161,47 @@ export default function Settings() {
       return;
     }
     loadStaff();
+  };
+
+  const addClosure = async () => {
+    if (!business) return;
+    setClosureError(null);
+    const start = closureStart.trim();
+    const end = (closureEnd.trim() || start); // single-day closure if end left blank
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end)) {
+      setClosureError(t("closures.errorDate"));
+      return;
+    }
+    if (end < start) {
+      setClosureError(t("closures.errorOrder"));
+      return;
+    }
+    setClosureSubmitting(true);
+    const err = await createClosure(business.id, start, end, closureReason);
+    setClosureSubmitting(false);
+    if (err) {
+      setClosureError(err);
+      return;
+    }
+    setClosureStart("");
+    setClosureEnd("");
+    setClosureReason("");
+    loadClosures();
+  };
+
+  const removeClosure = async (id: string) => {
+    const ok = await confirmAsync(
+      t("closures.removeConfirm"),
+      t("common.remove"),
+      t("common.cancel")
+    );
+    if (!ok) return;
+    const err = await deleteClosure(id);
+    if (err) {
+      setClosureError(err);
+      return;
+    }
+    setClosures((prev) => prev.filter((c) => c.id !== id));
   };
 
   const toggleDay = (day: Weekday, isOpen: boolean) => {
@@ -311,6 +371,73 @@ export default function Settings() {
             </View>
           );
         })}
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>{t("closures.title")}</Text>
+        <Text style={styles.whatsappHint}>{t("closures.hint")}</Text>
+        {closures.map((closure) => (
+          <View key={closure.id} style={styles.closureRow}>
+            <View style={styles.closureInfo}>
+              <Text style={styles.closureDates}>
+                {closure.start_date === closure.end_date
+                  ? closure.start_date
+                  : `${closure.start_date} ${t("common.timeRangeSeparator")} ${closure.end_date}`}
+              </Text>
+              {closure.reason ? (
+                <Text style={styles.closureReason}>{closure.reason}</Text>
+              ) : null}
+            </View>
+            <Pressable
+              onPress={() => removeClosure(closure.id)}
+              style={styles.removeButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.remove")}
+            >
+              <Text style={styles.removeButtonText}>×</Text>
+            </Pressable>
+          </View>
+        ))}
+        <View style={styles.closureForm}>
+          <View style={styles.closureDateRow}>
+            <View style={styles.closureDateField}>
+              <FieldLabel>{t("closures.startDate")}</FieldLabel>
+              <TextInput
+                style={styles.input}
+                placeholder="2026-01-07"
+                autoCapitalize="none"
+                value={closureStart}
+                onChangeText={setClosureStart}
+              />
+            </View>
+            <View style={styles.closureDateField}>
+              <FieldLabel>{t("closures.endDate")}</FieldLabel>
+              <TextInput
+                style={styles.input}
+                placeholder="2026-01-07"
+                autoCapitalize="none"
+                value={closureEnd}
+                onChangeText={setClosureEnd}
+              />
+            </View>
+          </View>
+          <FieldLabel>{t("closures.reason")}</FieldLabel>
+          <TextInput
+            style={styles.input}
+            placeholder={t("closures.reasonPlaceholder")}
+            value={closureReason}
+            onChangeText={setClosureReason}
+          />
+          {closureError ? <Text style={styles.error}>{closureError}</Text> : null}
+          <Pressable style={styles.addButton} onPress={addClosure} disabled={closureSubmitting}>
+            {closureSubmitting ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : (
+              <Text style={styles.addButtonText}>{t("closures.add")}</Text>
+            )}
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.section}>
@@ -550,6 +677,40 @@ function createStyles(colors: ThemeColors) {
   },
   closedText: {
     color: colors.muted,
+  },
+  closureRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 10,
+    padding: 12,
+    backgroundColor: colors.surface,
+    gap: 8,
+  },
+  closureInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  closureDates: {
+    color: colors.ink,
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  closureReason: {
+    fontSize: 13,
+    color: colors.inkSoft,
+  },
+  closureForm: {
+    gap: 8,
+  },
+  closureDateRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  closureDateField: {
+    flex: 1,
+    gap: 4,
   },
   serviceBlock: {
     gap: 4,

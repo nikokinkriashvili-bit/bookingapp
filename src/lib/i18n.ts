@@ -332,6 +332,18 @@ const en = {
   "reminders.bookNow": "Book now",
   "reminders.dismiss": "Dismiss",
 
+  // Closures / holidays (roadmap 4.3 prerequisite, F4)
+  "closures.title": "Closures & holidays",
+  "closures.hint": "Days the business is closed. Blocked on the calendar and (later) the public booking page.",
+  "closures.startDate": "From (YYYY-MM-DD)",
+  "closures.endDate": "To (optional)",
+  "closures.reason": "Reason (optional)",
+  "closures.reasonPlaceholder": "e.g. New Year holiday",
+  "closures.add": "+ Add closure",
+  "closures.removeConfirm": "Remove this closure?",
+  "closures.errorDate": "Enter dates as YYYY-MM-DD.",
+  "closures.errorOrder": "End date must be on or after the start date.",
+
   // Staff
   "settings.staff": "Staff",
   "staff.add": "+ Add staff member",
@@ -639,6 +651,17 @@ const ka: Record<StringKey, string> = {
   "reminders.sendWhatsApp": "WhatsApp გაგზავნა",
   "reminders.bookNow": "შეკვეთა ახლავე",
   "reminders.dismiss": "მოხსნა",
+
+  "closures.title": "დახურვები და დღესასწაულები",
+  "closures.hint": "დღეები, როცა ბიზნესი დაკეტილია. აისახება კალენდარში და (მოგვიანებით) საჯარო ჯავშნის გვერდზე.",
+  "closures.startDate": "დან (YYYY-MM-DD)",
+  "closures.endDate": "მდე (სურვილისამებრ)",
+  "closures.reason": "მიზეზი (სურვილისამებრ)",
+  "closures.reasonPlaceholder": "მაგ. საახალწლო დღესასწაული",
+  "closures.add": "+ დახურვის დამატება",
+  "closures.removeConfirm": "წავშალო ეს დახურვა?",
+  "closures.errorDate": "შეიყვანეთ თარიღები ფორმატში YYYY-MM-DD.",
+  "closures.errorOrder": "დასრულების თარიღი უნდა იყოს დაწყების ტოლი ან მეტი.",
 
   "settings.staff": "თანამშრომლები",
   "staff.add": "+ თანამშრომლის დამატება",
