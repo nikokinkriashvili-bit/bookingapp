@@ -59,8 +59,11 @@ const en = {
   "onboarding.serviceName": "Service name",
   "onboarding.serviceMin": "Min",
   "onboarding.serviceGel": "GEL",
+  "onboarding.priceRangeHint": "Optional price range — the guide you show customers before inspecting the car.",
   "onboarding.addService": "+ Add service",
   "onboarding.finish": "Finish setup",
+  "service.priceFrom": "From ₾",
+  "service.priceTo": "To ₾",
   "onboarding.errorNoServices": "Add at least one service.",
   "onboarding.errorCreateBusiness": "Failed to create business.",
 
@@ -116,6 +119,9 @@ const en = {
   "job.customerDetails": "Customer details",
   "job.services": "Services",
   "job.priceGel": "Price (GEL)",
+  "job.priceOptional": "Price (set after inspection)",
+  "job.priceAfterInspection": "Leave blank until quoted",
+  "job.suggestedRange": "Suggested range",
   "job.conditionTitle": "Vehicle condition",
   "job.conditionBody": "Body",
   "job.conditionGlass": "Glass",
@@ -411,8 +417,11 @@ const ka: Record<StringKey, string> = {
   "onboarding.serviceName": "სერვისის სახელი",
   "onboarding.serviceMin": "წთ",
   "onboarding.serviceGel": "₾",
+  "onboarding.priceRangeHint": "ფასის დიაპაზონი (სურვილისამებრ) — მიახლოებითი ფასი, რომელსაც კლიენტს ეუბნები მანქანის დათვალიერებამდე.",
   "onboarding.addService": "+ სერვისის დამატება",
   "onboarding.finish": "დასრულება",
+  "service.priceFrom": "დან ₾",
+  "service.priceTo": "მდე ₾",
   "onboarding.errorNoServices": "დაამატეთ ერთი სერვისი მაინც.",
   "onboarding.errorCreateBusiness": "ბიზნესის შექმნა ვერ მოხერხდა.",
 
@@ -464,6 +473,9 @@ const ka: Record<StringKey, string> = {
   "job.customerDetails": "კლიენტის დეტალები",
   "job.services": "სერვისები",
   "job.priceGel": "ფასი (₾)",
+  "job.priceOptional": "ფასი (დათვალიერების შემდეგ)",
+  "job.priceAfterInspection": "დატოვე ცარიელი შეფასებამდე",
+  "job.suggestedRange": "სავარაუდო დიაპაზონი",
   "job.conditionTitle": "ავტომობილის მდგომარეობა",
   "job.conditionBody": "კუზოვი",
   "job.conditionGlass": "შუშები",
@@ -705,4 +717,22 @@ export const STRINGS: Record<Language, Record<StringKey, string>> = { en, ka };
 // GEL amounts render with the lari sign in both languages.
 export function formatGel(amount: number): string {
   return `${amount % 1 === 0 ? amount.toFixed(0) : amount.toFixed(2)} ₾`;
+}
+
+function formatAmount(amount: number): string {
+  return amount % 1 === 0 ? amount.toFixed(0) : amount.toFixed(2);
+}
+
+// A service's guide price range, formatted as a " · 150–300 ₾" suffix for
+// display next to a service name. Collapses to a single value when min == max
+// (or only one end is set), and to "" when the service has no range at all.
+export function formatServiceRange(
+  min: number | null,
+  max: number | null
+): string {
+  const lo = min ?? max;
+  const hi = max ?? min;
+  if (lo == null || hi == null) return "";
+  if (lo === hi) return ` · ${formatAmount(lo)} ₾`;
+  return ` · ${formatAmount(lo)}–${formatAmount(hi)} ₾`;
 }

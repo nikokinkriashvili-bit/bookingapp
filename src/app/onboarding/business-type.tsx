@@ -57,7 +57,8 @@ export default function BusinessTypeStep() {
       config.defaultServices.map((s) => ({
         name: language === "ka" ? s.nameKa ?? s.name : s.name,
         durationMinutes: s.durationMinutes,
-        priceGel: "",
+        priceMin: "",
+        priceMax: "",
       }))
     );
     setError(null);

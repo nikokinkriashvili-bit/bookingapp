@@ -15,7 +15,6 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useOnboarding } from "@/providers/OnboardingProvider";
 import { useT } from "@/providers/LanguageProvider";
-import { FieldLabel } from "@/components/FieldLabel";
 import { parseDecimal } from "@/lib/number";
 
 export default function ServicesStep() {
@@ -35,7 +34,7 @@ export default function ServicesStep() {
 
   const updateService = (
     index: number,
-    field: "name" | "durationMinutes" | "priceGel",
+    field: "name" | "durationMinutes" | "priceMin" | "priceMax",
     value: string
   ) => {
     setServices(
@@ -55,7 +54,7 @@ export default function ServicesStep() {
   };
 
   const addService = () => {
-    setServices([...services, { name: "", durationMinutes: 30, priceGel: "" }]);
+    setServices([...services, { name: "", durationMinutes: 30, priceMin: "", priceMax: "" }]);
   };
 
   const onSubmit = async () => {
@@ -92,7 +91,8 @@ export default function ServicesStep() {
         business_id: business.id,
         name: s.name.trim(),
         duration_minutes: s.durationMinutes,
-        price_gel: parseDecimal(s.priceGel),
+        price_min: parseDecimal(s.priceMin),
+        price_max: parseDecimal(s.priceMax),
       }))
     );
 
@@ -111,50 +111,51 @@ export default function ServicesStep() {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{t("onboarding.servicesTitle")}</Text>
 
-      {services.length > 0 ? (
-        <View style={styles.serviceRow}>
-          <FieldLabel styleOverride={styles.serviceName}>
-            {t("onboarding.serviceName")}
-          </FieldLabel>
-          <FieldLabel styleOverride={styles.serviceDuration}>
-            {t("onboarding.serviceMin")}
-          </FieldLabel>
-          <FieldLabel styleOverride={styles.servicePrice}>
-            {t("onboarding.serviceGel")}
-          </FieldLabel>
-        </View>
-      ) : null}
+      <Text style={styles.rangeHint}>{t("onboarding.priceRangeHint")}</Text>
       {services.map((service, index) => (
-        <View key={index} style={styles.serviceRow}>
-          <TextInput
-            style={[styles.input, styles.serviceName]}
-            placeholder={t("onboarding.serviceName")}
-            value={service.name}
-            onChangeText={(v) => updateService(index, "name", v)}
-          />
-          <TextInput
-            style={[styles.input, styles.serviceDuration]}
-            placeholder={t("onboarding.serviceMin")}
-            keyboardType="numeric"
-            value={String(service.durationMinutes)}
-            onChangeText={(v) => updateService(index, "durationMinutes", v)}
-          />
-          <TextInput
-            style={[styles.input, styles.servicePrice]}
-            placeholder={t("onboarding.serviceGel")}
-            keyboardType="numeric"
-            value={service.priceGel}
-            onChangeText={(v) => updateService(index, "priceGel", v)}
-          />
-          <Pressable
-            onPress={() => removeService(index)}
-            style={styles.removeButton}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            accessibilityRole="button"
-            accessibilityLabel={t("common.remove")}
-          >
-            <Text style={styles.removeButtonText}>×</Text>
-          </Pressable>
+        <View key={index} style={styles.serviceBlock}>
+          <View style={styles.serviceRow}>
+            <TextInput
+              style={[styles.input, styles.serviceName]}
+              placeholder={t("onboarding.serviceName")}
+              value={service.name}
+              onChangeText={(v) => updateService(index, "name", v)}
+            />
+            <TextInput
+              style={[styles.input, styles.serviceDuration]}
+              placeholder={t("onboarding.serviceMin")}
+              keyboardType="numeric"
+              value={String(service.durationMinutes)}
+              onChangeText={(v) => updateService(index, "durationMinutes", v)}
+            />
+            <Pressable
+              onPress={() => removeService(index)}
+              style={styles.removeButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel={t("common.remove")}
+            >
+              <Text style={styles.removeButtonText}>×</Text>
+            </Pressable>
+          </View>
+          <View style={styles.priceRangeRow}>
+            <TextInput
+              style={[styles.input, styles.servicePrice]}
+              placeholder={t("service.priceFrom")}
+              keyboardType="numeric"
+              value={service.priceMin}
+              onChangeText={(v) => updateService(index, "priceMin", v)}
+            />
+            <Text style={styles.rangeDash}>–</Text>
+            <TextInput
+              style={[styles.input, styles.servicePrice]}
+              placeholder={t("service.priceTo")}
+              keyboardType="numeric"
+              value={service.priceMax}
+              onChangeText={(v) => updateService(index, "priceMax", v)}
+            />
+            <Text style={styles.rangeUnit}>₾</Text>
+          </View>
         </View>
       ))}
 
@@ -188,10 +189,32 @@ function createStyles(colors: ThemeColors) {
     marginBottom: 8,
     textAlign: "center",
   },
+  serviceBlock: {
+    gap: 6,
+    marginBottom: 4,
+  },
   serviceRow: {
     flexDirection: "row",
     gap: 8,
     alignItems: "center",
+  },
+  priceRangeRow: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+  },
+  rangeHint: {
+    fontSize: 12,
+    color: colors.muted,
+  },
+  rangeDash: {
+    color: colors.muted,
+    fontSize: 16,
+  },
+  rangeUnit: {
+    color: colors.inkSoft,
+    fontSize: 16,
+    fontWeight: "600",
   },
   input: {
     color: colors.ink,

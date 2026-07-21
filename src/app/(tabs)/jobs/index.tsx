@@ -13,6 +13,7 @@ import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { supabase } from "@/lib/supabase";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
+import { formatGel, formatServiceRange } from "@/lib/i18n";
 import { sendWhatsAppMessage } from "@/lib/integrations";
 import { FieldLabel } from "@/components/FieldLabel";
 import {
@@ -47,7 +48,8 @@ type Service = {
   id: string;
   name: string;
   duration_minutes: number;
-  price_gel: number | null;
+  price_min: number | null;
+  price_max: number | null;
 };
 
 type StaffOption = { id: string; name: string };
@@ -100,7 +102,6 @@ export default function NewJob() {
   const [toManuallyEdited, setToManuallyEdited] = useState(false);
 
   const [price, setPrice] = useState("");
-  const [priceManuallyEdited, setPriceManuallyEdited] = useState(false);
 
   const [condition, setCondition] = useState<JobCondition>(EMPTY_JOB_CONDITION);
 
@@ -123,7 +124,7 @@ export default function NewJob() {
     if (!business) return;
     supabase
       .from("services")
-      .select("id, name, duration_minutes, price_gel")
+      .select("id, name, duration_minutes, price_min, price_max")
       .eq("business_id", business.id)
       .then(({ data }) => setServices(data ?? []));
     supabase
@@ -185,7 +186,12 @@ export default function NewJob() {
 
   const selectedServices = services.filter((s) => selectedServiceIds.includes(s.id));
   const totalMinutes = selectedServices.reduce((sum, s) => sum + s.duration_minutes, 0);
-  const totalPrice = selectedServices.reduce((sum, s) => sum + (s.price_gel ?? 0), 0);
+  // Detailers quote after inspecting, so we no longer auto-fill a fixed price.
+  // The summed service ranges are a guide the detailer can eyeball while
+  // entering (or deferring) the actual price.
+  const suggestedMin = selectedServices.reduce((sum, s) => sum + (s.price_min ?? 0), 0);
+  const suggestedMax = selectedServices.reduce((sum, s) => sum + (s.price_max ?? 0), 0);
+  const hasSuggestedRange = suggestedMin > 0 || suggestedMax > 0;
 
   useEffect(() => {
     if (toManuallyEdited || !fromDate || !fromTime) return;
@@ -204,16 +210,6 @@ export default function NewJob() {
   const onToTimeChange = (v: string) => {
     setToManuallyEdited(true);
     setToTime(v);
-  };
-
-  useEffect(() => {
-    if (priceManuallyEdited) return;
-    setPrice(totalPrice ? String(totalPrice) : "");
-  }, [totalPrice, priceManuallyEdited]);
-
-  const onPriceChange = (v: string) => {
-    setPriceManuallyEdited(true);
-    setPrice(v);
   };
 
   const onSubmit = async () => {
@@ -470,7 +466,7 @@ export default function NewJob() {
               }
             >
               {s.name} · {s.duration_minutes}{t("common.minShort")}
-              {s.price_gel ? ` · ${s.price_gel} ₾` : ""}
+              {formatServiceRange(s.price_min, s.price_max)}
             </Text>
           </Pressable>
         ))}
@@ -520,13 +516,18 @@ export default function NewJob() {
       ) : null}
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>{t("job.priceGel")}</Text>
+        <Text style={styles.sectionLabel}>{t("job.priceOptional")}</Text>
+        {hasSuggestedRange ? (
+          <Text style={styles.rangeHint}>
+            {t("job.suggestedRange")}: {formatGel(suggestedMin)}–{formatGel(suggestedMax)}
+          </Text>
+        ) : null}
         <TextInput
           style={styles.input}
-          placeholder="0"
+          placeholder={t("job.priceAfterInspection")}
           keyboardType="numeric"
           value={price}
-          onChangeText={onPriceChange}
+          onChangeText={setPrice}
         />
       </View>
 
@@ -766,6 +767,10 @@ function createStyles(colors: ThemeColors) {
     fontSize: 14,
     color: colors.inkSoft,
     marginTop: 4,
+  },
+  rangeHint: {
+    fontSize: 13,
+    color: colors.muted,
   },
   button: {
     backgroundColor: colors.primary,

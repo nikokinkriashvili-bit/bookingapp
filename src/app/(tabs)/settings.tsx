@@ -30,7 +30,8 @@ type ServiceEdit = {
   id: string | null; // null = newly added, not yet in the DB
   name: string;
   durationMinutes: string;
-  priceGel: string;
+  priceMin: string; // guide range; exact price is quoted per job after inspection
+  priceMax: string;
   reminderDays: string; // empty = no rebooking reminder for this service
 };
 
@@ -99,7 +100,7 @@ export default function Settings() {
       loadClosures();
       supabase
         .from("services")
-        .select("id, name, duration_minutes, price_gel, reminder_interval_days")
+        .select("id, name, duration_minutes, price_min, price_max, reminder_interval_days")
         .eq("business_id", business.id)
         .order("name")
         .then(({ data }) => {
@@ -108,7 +109,8 @@ export default function Settings() {
               id: s.id,
               name: s.name,
               durationMinutes: String(s.duration_minutes),
-              priceGel: s.price_gel != null ? String(s.price_gel) : "",
+              priceMin: s.price_min != null ? String(s.price_min) : "",
+              priceMax: s.price_max != null ? String(s.price_max) : "",
               reminderDays:
                 s.reminder_interval_days != null ? String(s.reminder_interval_days) : "",
             }))
@@ -229,7 +231,7 @@ export default function Settings() {
   const addService = () => {
     setServices([
       ...services,
-      { id: null, name: "", durationMinutes: "30", priceGel: "", reminderDays: "" },
+      { id: null, name: "", durationMinutes: "30", priceMin: "", priceMax: "", reminderDays: "" },
     ]);
   };
 
@@ -280,7 +282,8 @@ export default function Settings() {
       const values = {
         name: service.name.trim(),
         duration_minutes: parseIntOr(service.durationMinutes, 0),
-        price_gel: parseDecimal(service.priceGel),
+        price_min: parseDecimal(service.priceMin),
+        price_max: parseDecimal(service.priceMax),
         reminder_interval_days: service.reminderDays.trim()
           ? parseIntOr(service.reminderDays, 0)
           : null,
@@ -442,19 +445,7 @@ export default function Settings() {
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>{t("onboarding.servicesTitle")}</Text>
-        {services.length > 0 ? (
-          <View style={styles.serviceRow}>
-            <FieldLabel styleOverride={styles.serviceName}>
-              {t("onboarding.serviceName")}
-            </FieldLabel>
-            <FieldLabel styleOverride={styles.serviceSmall}>
-              {t("onboarding.serviceMin")}
-            </FieldLabel>
-            <FieldLabel styleOverride={styles.serviceSmall}>
-              {t("onboarding.serviceGel")}
-            </FieldLabel>
-          </View>
-        ) : null}
+        <Text style={styles.rangeHint}>{t("onboarding.priceRangeHint")}</Text>
         {services.map((service, index) => (
           <View key={service.id ?? `new-${index}`} style={styles.serviceBlock}>
             <View style={styles.serviceRow}>
@@ -471,13 +462,6 @@ export default function Settings() {
                 value={service.durationMinutes}
                 onChangeText={(v) => updateService(index, "durationMinutes", v)}
               />
-              <TextInput
-                style={[styles.input, styles.serviceSmall]}
-                placeholder={t("onboarding.serviceGel")}
-                keyboardType="numeric"
-                value={service.priceGel}
-                onChangeText={(v) => updateService(index, "priceGel", v)}
-              />
               <Pressable
                 onPress={() => removeService(index)}
                 style={styles.removeButton}
@@ -487,6 +471,24 @@ export default function Settings() {
               >
                 <Text style={styles.removeButtonText}>×</Text>
               </Pressable>
+            </View>
+            <View style={styles.priceRangeRow}>
+              <TextInput
+                style={[styles.input, styles.serviceSmall]}
+                placeholder={t("service.priceFrom")}
+                keyboardType="numeric"
+                value={service.priceMin}
+                onChangeText={(v) => updateService(index, "priceMin", v)}
+              />
+              <Text style={styles.rangeDash}>–</Text>
+              <TextInput
+                style={[styles.input, styles.serviceSmall]}
+                placeholder={t("service.priceTo")}
+                keyboardType="numeric"
+                value={service.priceMax}
+                onChangeText={(v) => updateService(index, "priceMax", v)}
+              />
+              <Text style={styles.rangeUnit}>₾</Text>
             </View>
             <View style={styles.reminderRow}>
               <Text style={styles.reminderLabel}>{t("settings.serviceReminderDays")}</Text>
@@ -713,12 +715,31 @@ function createStyles(colors: ThemeColors) {
     gap: 4,
   },
   serviceBlock: {
-    gap: 4,
+    gap: 6,
+    marginBottom: 6,
   },
   serviceRow: {
     flexDirection: "row",
     gap: 8,
     alignItems: "center",
+  },
+  priceRangeRow: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+  },
+  rangeHint: {
+    fontSize: 12,
+    color: colors.muted,
+  },
+  rangeDash: {
+    color: colors.muted,
+    fontSize: 16,
+  },
+  rangeUnit: {
+    color: colors.inkSoft,
+    fontSize: 16,
+    fontWeight: "600",
   },
   reminderRow: {
     flexDirection: "row",

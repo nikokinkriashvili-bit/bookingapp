@@ -11,7 +11,8 @@ import type { BusinessType, WorkingHours } from "@/lib/businessTypes";
 export type DraftService = {
   name: string;
   durationMinutes: number;
-  priceGel: string;
+  priceMin: string;
+  priceMax: string;
 };
 
 type OnboardingContextValue = {

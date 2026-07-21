@@ -20,7 +20,7 @@ import { parseDateAndTime, toDateKey, toTimeString } from "@/lib/calendarDate";
 import { STATUS_ORDER, statusLabelKey, type JobStatus } from "@/lib/jobStatus";
 import { fireStatusSeams } from "@/lib/jobActions";
 import { parseDecimal, parseDecimalOr } from "@/lib/number";
-import { formatGel, type StringKey } from "@/lib/i18n";
+import { formatGel, formatServiceRange, type StringKey } from "@/lib/i18n";
 import {
   listJobPayments,
   outstandingBalance,
@@ -52,7 +52,8 @@ type Service = {
   id: string;
   name: string;
   duration_minutes: number;
-  price_gel: number | null;
+  price_min: number | null;
+  price_max: number | null;
 };
 
 type StaffOption = { id: string; name: string };
@@ -179,7 +180,7 @@ export default function EditJob() {
     if (!business) return;
     supabase
       .from("services")
-      .select("id, name, duration_minutes, price_gel")
+      .select("id, name, duration_minutes, price_min, price_max")
       .eq("business_id", business.id)
       .then(({ data }) => setServices(data ?? []));
     supabase
@@ -440,7 +441,7 @@ export default function EditJob() {
               }
             >
               {s.name} · {s.duration_minutes}{t("common.minShort")}
-              {s.price_gel ? ` · ${s.price_gel} ₾` : ""}
+              {formatServiceRange(s.price_min, s.price_max)}
             </Text>
           </Pressable>
         ))}
