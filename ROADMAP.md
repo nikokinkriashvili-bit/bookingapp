@@ -114,3 +114,5 @@ Every box in Stages 0–3 and 7, plus 4.1–4.4 + 4.6–4.8, plus 6.1–6.3, che
 | July 2026 | Stage 4.2 (code done, needs Niko) | Rebooking/maintenance reminders built — migration 014 not yet run, needs a real login session to confirm end-to-end |
 | July 2026 | Stage 4.3 F4 prerequisite ✅ | `business_closures` built (migration 015 not yet run) — Settings management + calendar closed-day shading. Public-booking half paused (Niko: build with Stage 6 so the rate limit ships with it) |
 | July 2026 | Stage 4.3b (code done, needs Niko) | Manual payment recording built — migration 016 not yet run; payments section on edit screen, auto-flip to paid, accurate pending-payments stat |
+| July 2026 | Bugfix | Calendar/dashboard no longer hard-fail when a feature table isn't migrated yet (root cause of "calendar unable to load") |
+| July 2026 | Booking-model pivot, Slice 1 (code done, needs Niko) | Service **price ranges** (migration 017 not yet run) — detailers quote after inspecting; intake price now optional with a suggested-range hint. Slice 2 (per-job quote flow) is next. See CLAUDE.md Confirmed product decisions. |

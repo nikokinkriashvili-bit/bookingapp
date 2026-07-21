@@ -78,6 +78,7 @@ These deliberately diverge from the original TRD text. They were made with Niko 
 - **Summary stats show GEL amounts, not counts** (period summaries and dashboard).
 - **Order edit screen** exists at `jobs/[id]/edit.tsx`; the quick status-change modal on the day view stays one tap, with "Edit order" one tap further.
 - **Home dashboard stat balloons**, including visually muted "Coming soon" placeholders for the Phase 2/3 logistics/material-purchases module — placeholders are intentional, not broken.
+- **Booking-model pivot (Niko, July 2026): detailers quote *after* inspecting, not from a fixed price list.** Services carry an optional guide *price range* (`price_min`/`price_max`, migration 017), not a fixed price — the old `services.price_gel` is dormant. Intake no longer auto-fills a fixed price; price is optional at intake (set after inspection) with the summed service range shown as a hint. The intended public flow is: customer books an **inspection appointment** → detailer inspects → detailer sends a **quote** (price + service description) → customer **accepts/declines**, link valid ~3 days. The **internal quote flow** (per-job quote fields + accept/decline the detailer can flip) is being built now; the **public quote link + auto-WhatsApp send** wait for Stage 6 (same reason as public booking). Guiding principle: **minimise data entry — the app must be fast for detailers who won't fill in lots of fields.**
 
 ## Build roadmap (revised order, July 2026)
 
