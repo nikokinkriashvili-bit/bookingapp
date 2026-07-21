@@ -71,13 +71,17 @@ export default function CalendarMonth() {
         end: toDateKey(addDays(rangeStart, 41)),
       }),
     ]);
-    if (jobsResult.error || closuresResult.error) {
+    // Only the jobs query is load-bearing for this screen. Closures are an
+    // enhancement (shaded days) -- if that query fails (e.g. the migration
+    // hasn't been run yet), show the calendar without shading rather than a
+    // dead "couldn't load" screen.
+    if (jobsResult.error) {
       setError(true);
       setLoading(false);
       return;
     }
     setJobs((jobsResult.data as unknown as JobRow[]) ?? []);
-    setClosures(closuresResult.closures);
+    setClosures(closuresResult.error ? [] : closuresResult.closures);
     setLoading(false);
   }, [business, month]);
 

@@ -62,12 +62,11 @@ export function DashboardStats() {
         supabase.from("payments").select("job_id, amount").eq("business_id", business.id),
       ]);
 
-    if (
-      prevMonthResult.error ||
-      allTimeResult.error ||
-      receivedPoResult.error ||
-      paymentsResult.error
-    ) {
+    // Jobs and received-PO data are load-bearing. Payments are an enhancement
+    // (they refine the pending figure) -- a failed payments query, e.g. before
+    // its migration is run, degrades to "no payments recorded" rather than
+    // breaking the whole dashboard.
+    if (prevMonthResult.error || allTimeResult.error || receivedPoResult.error) {
       setError(true);
       return;
     }
@@ -75,7 +74,10 @@ export function DashboardStats() {
     const prevMonthJobs = prevMonthResult.data ?? [];
     const allJobs = allTimeResult.data ?? [];
     const receivedPos = (receivedPoResult.data as unknown as ReceivedPo[]) ?? [];
-    const paymentRows = (paymentsResult.data ?? []) as { job_id: string; amount: number }[];
+    const paymentRows = (paymentsResult.error ? [] : paymentsResult.data ?? []) as {
+      job_id: string;
+      amount: number;
+    }[];
 
     // Sum recorded payments per job so "pending" reflects the true remaining
     // balance on partially-paid jobs, not the whole price (roadmap 4.3b / F5).
