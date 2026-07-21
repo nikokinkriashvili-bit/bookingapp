@@ -134,6 +134,7 @@ These deliberately diverge from the original TRD text. They were made with Niko 
 
 These are unresolved as of the TRD and may change scope once answered — check with Niko if a task depends on one of these:
 1. Georgian vehicle plate lookup API — no public API confirmed; may remain permanently manual-entry-only.
-2. Bank of Georgia merchant account (businessonline.ge) is a prerequisite for testing payment integration end-to-end — a business/paperwork step, not something buildable in code.
+2. Bank merchant accounts are **per-business and multi-bank** (BOG + TBC, TRD v2 §6.6.1) — each detailer connects their own credentials; a `manual_transfer` fallback keeps unconnected businesses functional. IE registration is the actual prerequisite for a merchant account.
 3. Ownership of WhatsApp Business verification (Niko's entity vs. Carbros' existing entity) is unconfirmed.
 4. Specific pilot business name(s)/detailer(s) for tailoring onboarding defaults are unconfirmed.
+5. **Backend-engine integration (major, TRD v2 §4 + Risk #6):** the app is to be integrated with Niko's separately-built backend engine (user management, stock, rs.ge, catalogues). Niko has no access to it yet, so there's no interface spec. Until one exists: don't deepen architectural coupling to Supabase-specific features in the overlapping domains (auth/stock/catalogues) where a cheap alternative exists, and don't speculatively refactor either. Getting access + interface docs is a Stage 5 paperwork item.

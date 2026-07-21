@@ -70,12 +70,14 @@ Work top to bottom. Check items off here (`[ ]` → `[x]`, add the date). Each s
 - [ ] **5.2** 🖐 Resolve WhatsApp Business entity (Niko's entity vs. Carbros') and start Meta business verification — blocks 6.2.
 - [ ] **5.3** 🖐 Importer-module TRD (in Cowork) — unblocks landed cost/FX, fulfilment pipeline, NBG (6.4). **Feature proposals + the 7 decisions the TRD must settle are pre-drafted in [IMPORTER_MODULE_PLAN.md](IMPORTER_MODULE_PLAN.md); confirmed scope becomes Stage 8.**
 - [ ] **5.4** 🖐 Decisions: open vs. invite-only signup for pilot (S4) · Vercel Hobby→Pro · pilot detailer shortlist.
+- [ ] **5.5** 🖐 **Backend-engine access + interface docs** (TRD v2 Risk #6): obtain access to Niko's built backend project (user mgmt, stock, rs.ge, catalogues) and its API documentation. Blocks the integration spec; until it lands, avoid deepening Supabase-specific coupling in the overlapping domains.
+- [ ] **5.6** 🖐 TBC merchant API access/docs (payments are multi-bank per TRD v2 §6.6.1 — BOG + TBC provider adapters both needed at 6.3).
 
 ## Stage 6 — Integrations *(last by design; each behind its existing seam)*
 
 - [ ] **6.1** ⚙️ Supabase Edge Functions skeleton: functions repo layout, secrets, deploy flow documented in the runbook.
 - [ ] **6.2** ⚙️ WhatsApp Cloud API: send function called from `fireStatusSeams`, `messages_log` table (migration), bilingual template pairs approved by Meta, customer language preference column. *Depends on 5.2.*
-- [ ] **6.3** ⚙️ BOG payments: payment-link creation + webhook receiver Edge Function, `payments` table (migration), `paid` status driven by webhook; deposits (4.4) go live. *Depends on 5.1.*
+- [ ] **6.3** ⚙️ Bank payments (multi-bank per TRD v2 §6.6.1): `bank_credentials` table (per-business, provider 'bog'|'tbc', secrets encrypted), provider-adapter Edge Functions (link creation + webhook verification per bank), `payment_mode` ('bank'|'manual_transfer') on the business, dedicated payments-onboarding screen (bank picker / credentials / personal IBAN for manual mode; also reachable from Settings). Manual-transfer mode ships the WhatsApp message with IBAN + job reference and relies on the existing mark-as-paid flow. *Depends on 5.1 (BOG) + 5.6 (TBC).*
 - [ ] **6.4** ⚙️ NBG rate fetch — only when the importer TRD (5.3) lands.
 
 ## Stage 7 — Pilot readiness 🧪 *(gates launch)*
