@@ -35,6 +35,11 @@ type ServiceEdit = {
   reminderDays: string; // empty = no rebooking reminder for this service
 };
 
+type ArchivedService = {
+  id: string;
+  name: string;
+};
+
 type StaffRow = {
   id: string;
   name: string;
@@ -54,6 +59,8 @@ export default function Settings() {
   const [hours, setHours] = useState<WorkingHours | null>(null);
   const [services, setServices] = useState<ServiceEdit[]>([]);
   const [deletedServiceIds, setDeletedServiceIds] = useState<string[]>([]);
+  const [archivedServices, setArchivedServices] = useState<ArchivedService[]>([]);
+  const [archivedError, setArchivedError] = useState<string | null>(null);
   const [staffList, setStaffList] = useState<StaffRow[]>([]);
   const [staffFormOpen, setStaffFormOpen] = useState(false);
   const [staffName, setStaffName] = useState("");
@@ -100,20 +107,26 @@ export default function Settings() {
       loadClosures();
       supabase
         .from("services")
-        .select("id, name, duration_minutes, price_min, price_max, reminder_interval_days")
+        .select("id, name, duration_minutes, price_min, price_max, reminder_interval_days, archived")
         .eq("business_id", business.id)
         .order("name")
         .then(({ data }) => {
+          const rows = data ?? [];
           setServices(
-            (data ?? []).map((s) => ({
-              id: s.id,
-              name: s.name,
-              durationMinutes: String(s.duration_minutes),
-              priceMin: s.price_min != null ? String(s.price_min) : "",
-              priceMax: s.price_max != null ? String(s.price_max) : "",
-              reminderDays:
-                s.reminder_interval_days != null ? String(s.reminder_interval_days) : "",
-            }))
+            rows
+              .filter((s) => !s.archived)
+              .map((s) => ({
+                id: s.id,
+                name: s.name,
+                durationMinutes: String(s.duration_minutes),
+                priceMin: s.price_min != null ? String(s.price_min) : "",
+                priceMax: s.price_max != null ? String(s.price_max) : "",
+                reminderDays:
+                  s.reminder_interval_days != null ? String(s.reminder_interval_days) : "",
+              }))
+          );
+          setArchivedServices(
+            rows.filter((s) => s.archived).map((s) => ({ id: s.id, name: s.name }))
           );
           setLoading(false);
         });
@@ -228,6 +241,33 @@ export default function Settings() {
     setServices(services.filter((_, i) => i !== index));
   };
 
+  const restoreService = async (service: ArchivedService) => {
+    setArchivedError(null);
+    const { data: restored, error: restoreError } = await supabase
+      .from("services")
+      .update({ archived: false })
+      .eq("id", service.id)
+      .select("id, name, duration_minutes, price_min, price_max, reminder_interval_days")
+      .single();
+    if (restoreError || !restored) {
+      setArchivedError(restoreError?.message ?? t("common.loadError"));
+      return;
+    }
+    setArchivedServices((prev) => prev.filter((s) => s.id !== service.id));
+    setServices((prev) => [
+      ...prev,
+      {
+        id: restored.id,
+        name: restored.name,
+        durationMinutes: String(restored.duration_minutes),
+        priceMin: restored.price_min != null ? String(restored.price_min) : "",
+        priceMax: restored.price_max != null ? String(restored.price_max) : "",
+        reminderDays:
+          restored.reminder_interval_days != null ? String(restored.reminder_interval_days) : "",
+      },
+    ]);
+  };
+
   const addService = () => {
     setServices([
       ...services,
@@ -266,14 +306,18 @@ export default function Settings() {
       return;
     }
 
+    // Archive rather than delete -- past jobs reference services by id
+    // (jobs.service_ids, no FK), so hard-deleting one would break their
+    // history. Archived services stop appearing for new bookings but keep
+    // resolving fine on any job that already used them.
     for (const serviceId of deletedServiceIds) {
-      const { error: deleteError } = await supabase
+      const { error: archiveError } = await supabase
         .from("services")
-        .delete()
+        .update({ archived: true })
         .eq("id", serviceId);
-      if (deleteError) {
+      if (archiveError) {
         setSubmitting(false);
-        setError(deleteError.message);
+        setError(archiveError.message);
         return;
       }
     }
@@ -505,6 +549,23 @@ export default function Settings() {
         <Pressable style={styles.addButton} onPress={addService}>
           <Text style={styles.addButtonText}>{t("onboarding.addService")}</Text>
         </Pressable>
+
+        {archivedServices.length > 0 ? (
+          <View style={styles.archivedBlock}>
+            <Text style={styles.archivedTitle}>{t("service.archivedTitle")}</Text>
+            {archivedServices.map((service) => (
+              <View key={service.id} style={styles.archivedRow}>
+                <Text style={styles.archivedName} numberOfLines={1}>
+                  {service.name}
+                </Text>
+                <Pressable onPress={() => restoreService(service)}>
+                  <Text style={styles.archivedRestore}>{t("service.restore")}</Text>
+                </Pressable>
+              </View>
+            ))}
+            {archivedError ? <Text style={styles.error}>{archivedError}</Text> : null}
+          </View>
+        ) : null}
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -717,6 +778,36 @@ function createStyles(colors: ThemeColors) {
   serviceBlock: {
     gap: 6,
     marginBottom: 6,
+  },
+  archivedBlock: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.faintLine,
+    paddingTop: 10,
+    gap: 6,
+  },
+  archivedTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.muted,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  archivedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 6,
+  },
+  archivedName: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.inkSoft,
+  },
+  archivedRestore: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: "600",
   },
   serviceRow: {
     flexDirection: "row",

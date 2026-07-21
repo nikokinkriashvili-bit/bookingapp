@@ -64,6 +64,9 @@ const en = {
   "onboarding.finish": "Finish setup",
   "service.priceFrom": "From ₾",
   "service.priceTo": "To ₾",
+  "service.archivedTag": "archived",
+  "service.archivedTitle": "Archived services",
+  "service.restore": "Restore",
   "onboarding.errorNoServices": "Add at least one service.",
   "onboarding.errorCreateBusiness": "Failed to create business.",
 
@@ -119,6 +122,7 @@ const en = {
   "job.customerDetails": "Customer details",
   "job.services": "Services",
   "job.priceGel": "Price (GEL)",
+  "job.downloadReceipt": "Download receipt",
   "job.priceOptional": "Price (set after inspection)",
   "job.priceAfterInspection": "Leave blank until quoted",
   "job.suggestedRange": "Suggested range",
@@ -203,6 +207,7 @@ const en = {
   "vehicle.serviceHistory": "Service history",
   "vehicle.noHistory": "No orders for this vehicle yet.",
   "vehicle.newOrder": "New order for this vehicle",
+  "vehicle.repeatLastOrder": "Repeat last order",
   "vehicle.photos": "Photos",
   "vehicle.photosBefore": "Before",
   "vehicle.photosAfter": "After",
@@ -378,6 +383,12 @@ const en = {
   "quote.status.declined": "Declined",
   "quote.status.expired": "Expired — no reply",
 
+  // Owner alerts (roadmap 4.6)
+  "alerts.title": "Needs attention",
+  "alerts.lowStock": "Low stock",
+  "alerts.overdue": "Overdue",
+  "alerts.noShow": "No-show",
+
   // Staff
   "settings.staff": "Staff",
   "staff.add": "+ Add staff member",
@@ -439,6 +450,9 @@ const ka: Record<StringKey, string> = {
   "onboarding.finish": "დასრულება",
   "service.priceFrom": "დან ₾",
   "service.priceTo": "მდე ₾",
+  "service.archivedTag": "დაარქივებული",
+  "service.archivedTitle": "დაარქივებული სერვისები",
+  "service.restore": "აღდგენა",
   "onboarding.errorNoServices": "დაამატეთ ერთი სერვისი მაინც.",
   "onboarding.errorCreateBusiness": "ბიზნესის შექმნა ვერ მოხერხდა.",
 
@@ -490,6 +504,7 @@ const ka: Record<StringKey, string> = {
   "job.customerDetails": "კლიენტის დეტალები",
   "job.services": "სერვისები",
   "job.priceGel": "ფასი (₾)",
+  "job.downloadReceipt": "ქვითრის ჩამოტვირთვა",
   "job.priceOptional": "ფასი (დათვალიერების შემდეგ)",
   "job.priceAfterInspection": "დატოვე ცარიელი შეფასებამდე",
   "job.suggestedRange": "სავარაუდო დიაპაზონი",
@@ -568,6 +583,7 @@ const ka: Record<StringKey, string> = {
   "vehicle.serviceHistory": "სერვისების ისტორია",
   "vehicle.noHistory": "ამ ავტომობილზე შეკვეთები ჯერ არ არის.",
   "vehicle.newOrder": "ახალი შეკვეთა ამ ავტომობილზე",
+  "vehicle.repeatLastOrder": "ბოლო შეკვეთის გამეორება",
   "vehicle.photos": "ფოტოები",
   "vehicle.photosBefore": "მანამდე",
   "vehicle.photosAfter": "შემდეგ",
@@ -728,6 +744,11 @@ const ka: Record<StringKey, string> = {
   "quote.status.accepted": "მიღებული",
   "quote.status.declined": "უარყოფილი",
   "quote.status.expired": "ვადაგასული — პასუხის გარეშე",
+
+  "alerts.title": "საყურადღებო",
+  "alerts.lowStock": "მარაგი დაბალია",
+  "alerts.overdue": "ვადაგადაცილებული",
+  "alerts.noShow": "კლიენტი არ გამოცხადდა",
 
   "settings.staff": "თანამშრომლები",
   "staff.add": "+ თანამშრომლის დამატება",

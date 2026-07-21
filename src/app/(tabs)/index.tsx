@@ -1,11 +1,13 @@
 import { Link, Redirect } from "expo-router";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useThemeColors, type ThemeColors } from "@/providers/ThemeProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import { useBusiness } from "@/providers/BusinessProvider";
 import { useT } from "@/providers/LanguageProvider";
 import { DashboardStats } from "@/components/DashboardStats";
+import { AlertsBanner } from "@/components/AlertsBanner";
+import { registerPushToken } from "@/lib/pushTokens";
 
 export default function Index() {
   const colors = useThemeColors();
@@ -13,6 +15,10 @@ export default function Index() {
   const { session, isLoading: isAuthLoading } = useAuth();
   const { business, isLoading: isBusinessLoading } = useBusiness();
   const t = useT();
+
+  useEffect(() => {
+    if (business) registerPushToken(business.id);
+  }, [business]);
 
   if (isAuthLoading || (session && isBusinessLoading)) {
     return (
@@ -51,6 +57,7 @@ export default function Index() {
         </Link>
       </View>
 
+      <AlertsBanner />
       <DashboardStats />
     </ScrollView>
   );

@@ -36,6 +36,7 @@ import {
   sendQuote,
   type QuoteStatus,
 } from "@/lib/quotes";
+import { buildReceiptHtml, printReceipt } from "@/lib/receipt";
 import {
   addJobProduct,
   changeJobProductQty,
@@ -61,6 +62,7 @@ type Service = {
   duration_minutes: number;
   price_min: number | null;
   price_max: number | null;
+  archived: boolean;
 };
 
 type StaffOption = { id: string; name: string };
@@ -198,9 +200,13 @@ export default function EditJob() {
 
   useEffect(() => {
     if (!business) return;
+    // Fetch every service, including archived ones -- a job that already used
+    // an archived service still needs to render its name and range. Archived
+    // services are simply excluded from the pickable list below (unless the
+    // job already has them selected).
     supabase
       .from("services")
-      .select("id, name, duration_minutes, price_min, price_max")
+      .select("id, name, duration_minutes, price_min, price_max, archived")
       .eq("business_id", business.id)
       .then(({ data }) => setServices(data ?? []));
     supabase
@@ -298,6 +304,33 @@ export default function EditJob() {
       return;
     }
     loadConditionPhotos();
+  };
+
+  const [receiptBusy, setReceiptBusy] = useState(false);
+  const [receiptError, setReceiptError] = useState<string | null>(null);
+
+  const onDownloadReceipt = async () => {
+    if (!job || !business) return;
+    setReceiptError(null);
+    setReceiptBusy(true);
+    const html = buildReceiptHtml({
+      businessName: business.name,
+      plateNumber: job.vehicles?.plate_number ?? "",
+      make: job.vehicles?.make ?? null,
+      model: job.vehicles?.model ?? null,
+      customerName: job.customers?.name ?? "",
+      jobDateLabel: toDateKey(new Date(job.scheduled_slot)),
+      services: selectedServices.map((s) => ({ name: s.name })),
+      priceTotal: parseDecimal(price),
+      payments: payments.map((p) => ({
+        amount: Number(p.amount),
+        method: t(`payment.method.${p.method}` as StringKey),
+      })),
+      conditionNote: condition.note.trim() || null,
+    });
+    const err = await printReceipt(html);
+    setReceiptBusy(false);
+    if (err) setReceiptError(err);
   };
 
   const currentPrice = parseDecimal(price);
@@ -481,6 +514,20 @@ export default function EditJob() {
         <Text style={styles.readOnlyDetail}>
           {job.customers?.name} · {job.customers?.phone}
         </Text>
+        {status === "complete" || status === "paid" ? (
+          <Pressable
+            style={styles.receiptButton}
+            onPress={onDownloadReceipt}
+            disabled={receiptBusy}
+          >
+            {receiptBusy ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Text style={styles.receiptButtonText}>{t("job.downloadReceipt")}</Text>
+            )}
+          </Pressable>
+        ) : null}
+        {receiptError ? <Text style={styles.error}>{receiptError}</Text> : null}
       </View>
 
       <View style={styles.section}>
@@ -500,27 +547,30 @@ export default function EditJob() {
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>{t("job.services")}</Text>
-        {services.map((s) => (
-          <Pressable
-            key={s.id}
-            style={[
-              styles.option,
-              selectedServiceIds.includes(s.id) && styles.optionSelected,
-            ]}
-            onPress={() => toggleService(s.id)}
-          >
-            <Text
-              style={
-                selectedServiceIds.includes(s.id)
-                  ? styles.optionTextSelected
-                  : styles.optionText
-              }
+        {services
+          .filter((s) => !s.archived || selectedServiceIds.includes(s.id))
+          .map((s) => (
+            <Pressable
+              key={s.id}
+              style={[
+                styles.option,
+                selectedServiceIds.includes(s.id) && styles.optionSelected,
+              ]}
+              onPress={() => toggleService(s.id)}
             >
-              {s.name} · {s.duration_minutes}{t("common.minShort")}
-              {formatServiceRange(s.price_min, s.price_max)}
-            </Text>
-          </Pressable>
-        ))}
+              <Text
+                style={
+                  selectedServiceIds.includes(s.id)
+                    ? styles.optionTextSelected
+                    : styles.optionText
+                }
+              >
+                {s.name} · {s.duration_minutes}{t("common.minShort")}
+                {formatServiceRange(s.price_min, s.price_max)}
+                {s.archived ? ` · ${t("service.archivedTag")}` : ""}
+              </Text>
+            </Pressable>
+          ))}
         {selectedServiceIds.length > 0 ? (
           <Text style={styles.totalText}>
             {t("common.duration")}: {totalMinutes}{t("common.minShort")}
@@ -1019,6 +1069,19 @@ function createStyles(colors: ThemeColors) {
   readOnlyDetail: {
     fontSize: 14,
     color: colors.inkSoft,
+  },
+  receiptButton: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  receiptButtonText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: "600",
   },
   input: {
     color: colors.ink,

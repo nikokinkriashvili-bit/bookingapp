@@ -403,6 +403,15 @@ export default function VehicleProfile() {
         )}
       </View>
 
+      {jobs.length > 0 ? (
+        <Link
+          href={`/jobs?plate=${encodeURIComponent(vehicle.plate_number)}&services=${jobs[0].service_ids.join(",")}`}
+          style={styles.repeatOrderButton}
+        >
+          {t("vehicle.repeatLastOrder")}
+        </Link>
+      ) : null}
+
       <Link
         href={`/jobs?plate=${encodeURIComponent(vehicle.plate_number)}`}
         style={styles.newOrderButton}
@@ -614,6 +623,18 @@ function createStyles(colors: ThemeColors) {
     fontWeight: "600",
     textAlign: "center",
     padding: 14,
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  repeatOrderButton: {
+    backgroundColor: colors.surface,
+    color: colors.primary,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    fontSize: 15,
+    fontWeight: "600",
+    textAlign: "center",
+    padding: 12,
     borderRadius: 8,
     overflow: "hidden",
   },

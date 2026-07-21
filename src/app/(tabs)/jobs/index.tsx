@@ -59,9 +59,10 @@ export default function NewJob() {
   const styles = useMemo(() => createStyles(colors), [colors]);
   const t = useT();
   const { business } = useBusiness();
-  const { date: dateParam, plate: plateParam } = useLocalSearchParams<{
+  const { date: dateParam, plate: plateParam, services: servicesParam } = useLocalSearchParams<{
     date?: string;
     plate?: string;
+    services?: string;
   }>();
 
   const [plate, setPlate] = useState(plateParam?.toUpperCase() ?? "");
@@ -86,6 +87,7 @@ export default function NewJob() {
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [staff, setStaff] = useState<StaffOption[]>([]);
   const [assignedStaffId, setAssignedStaffId] = useState<string | null>(null);
+  const appliedRepeatServices = useRef(false);
 
   // No date param (arriving from +New directly, not a specific calendar day)
   // means the common case: default to right now, rounded to something
@@ -126,14 +128,27 @@ export default function NewJob() {
       .from("services")
       .select("id, name, duration_minutes, price_min, price_max")
       .eq("business_id", business.id)
-      .then(({ data }) => setServices(data ?? []));
+      .eq("archived", false)
+      .then(({ data }) => {
+        const rows = data ?? [];
+        setServices(rows);
+        // Repeat-last-order (roadmap 4.8): preselect the services from the
+        // ?services= param, once, dropping any that are no longer active
+        // (e.g. archived since that last order) rather than silently
+        // selecting an id the picker can't render.
+        if (servicesParam && !appliedRepeatServices.current) {
+          appliedRepeatServices.current = true;
+          const requested = new Set(servicesParam.split(","));
+          setSelectedServiceIds(rows.filter((s) => requested.has(s.id)).map((s) => s.id));
+        }
+      });
     supabase
       .from("staff")
       .select("id, name")
       .eq("business_id", business.id)
       .order("name")
       .then(({ data }) => setStaff(data ?? []));
-  }, [business]);
+  }, [business, servicesParam]);
 
   useEffect(() => {
     if (!business) return;
