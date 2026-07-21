@@ -19,7 +19,16 @@ import { FetchError } from "@/components/FetchError";
 import { parseDateAndTime, toDateKey, toTimeString } from "@/lib/calendarDate";
 import { STATUS_ORDER, statusLabelKey, type JobStatus } from "@/lib/jobStatus";
 import { fireStatusSeams } from "@/lib/jobActions";
-import { parseDecimalOr } from "@/lib/number";
+import { parseDecimal, parseDecimalOr } from "@/lib/number";
+import { formatGel, type StringKey } from "@/lib/i18n";
+import {
+  listJobPayments,
+  outstandingBalance,
+  recordPayment,
+  sumPayments,
+  type Payment,
+  type PaymentMethod,
+} from "@/lib/payments";
 import {
   addJobProduct,
   changeJobProductQty,
@@ -113,6 +122,12 @@ export default function EditJob() {
   const [consumptionBusy, setConsumptionBusy] = useState(false);
   const [consumptionError, setConsumptionError] = useState<string | null>(null);
 
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
+  const [paymentBusy, setPaymentBusy] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+
   const loadConsumed = useCallback(async () => {
     if (!id) return;
     const { data } = await supabase
@@ -125,6 +140,16 @@ export default function EditJob() {
   useEffect(() => {
     loadConsumed();
   }, [loadConsumed]);
+
+  const loadPayments = useCallback(async () => {
+    if (!id) return;
+    const { payments: rows } = await listJobPayments(id);
+    setPayments(rows);
+  }, [id]);
+
+  useEffect(() => {
+    loadPayments();
+  }, [loadPayments]);
 
   const runConsumption = async (action: () => Promise<string | null>) => {
     setConsumptionError(null);
@@ -247,6 +272,37 @@ export default function EditJob() {
       return;
     }
     loadConditionPhotos();
+  };
+
+  const currentPrice = parseDecimal(price);
+  const paidSoFar = sumPayments(payments);
+  const remaining = outstandingBalance(currentPrice, payments);
+
+  const onRecordPayment = async () => {
+    if (!business || !job) return;
+    setPaymentError(null);
+    const amount = parseDecimal(paymentAmount);
+    if (amount == null || amount <= 0) {
+      setPaymentError(t("payment.errorAmount"));
+      return;
+    }
+    setPaymentBusy(true);
+    const { error: recordError, autoPaid } = await recordPayment({
+      businessId: business.id,
+      jobId: job.id,
+      amount,
+      method: paymentMethod,
+      priceTotal: currentPrice,
+      currentStatus: status,
+    });
+    setPaymentBusy(false);
+    if (recordError) {
+      setPaymentError(recordError);
+      return;
+    }
+    setPaymentAmount("");
+    if (autoPaid) setStatus("paid");
+    loadPayments();
   };
 
   const toggleService = (serviceId: string) => {
@@ -522,6 +578,75 @@ export default function EditJob() {
           value={price}
           onChangeText={setPrice}
         />
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>{t("payment.title")}</Text>
+        <View style={styles.balanceRow}>
+          <View style={styles.balanceCell}>
+            <Text style={styles.balanceLabel}>{t("payment.paid")}</Text>
+            <Text style={styles.balanceValue}>{formatGel(paidSoFar)}</Text>
+          </View>
+          <View style={styles.balanceCell}>
+            <Text style={styles.balanceLabel}>{t("payment.remaining")}</Text>
+            <Text
+              style={[
+                styles.balanceValue,
+                remaining === 0 && currentPrice ? styles.balanceSettled : null,
+              ]}
+            >
+              {formatGel(remaining)}
+            </Text>
+          </View>
+        </View>
+
+        {payments.map((p) => (
+          <View key={p.id} style={styles.paymentRow}>
+            <Text style={styles.paymentMethod}>
+              {t(`payment.method.${p.method}` as StringKey)}
+            </Text>
+            <Text style={styles.paymentAmount}>{formatGel(Number(p.amount))}</Text>
+          </View>
+        ))}
+
+        <View style={styles.methodRow}>
+          {(["cash", "transfer", "bog_link"] as const).map((m) => (
+            <Pressable
+              key={m}
+              style={[styles.methodChip, paymentMethod === m && styles.methodChipSelected]}
+              onPress={() => setPaymentMethod(m)}
+            >
+              <Text
+                style={
+                  paymentMethod === m ? styles.methodChipTextSelected : styles.methodChipText
+                }
+              >
+                {t(`payment.method.${m}` as StringKey)}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        <View style={styles.paymentInputRow}>
+          <TextInput
+            style={[styles.input, styles.paymentInput]}
+            placeholder={t("payment.amountPlaceholder")}
+            keyboardType="numeric"
+            value={paymentAmount}
+            onChangeText={setPaymentAmount}
+          />
+          <Pressable
+            style={styles.recordButton}
+            onPress={onRecordPayment}
+            disabled={paymentBusy}
+          >
+            {paymentBusy ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.recordButtonText}>{t("payment.record")}</Text>
+            )}
+          </Pressable>
+        </View>
+        {paymentError ? <Text style={styles.error}>{paymentError}</Text> : null}
       </View>
 
       <View style={styles.section}>
@@ -833,6 +958,95 @@ function createStyles(colors: ThemeColors) {
   consumptionHint: {
     fontSize: 13,
     color: colors.muted,
+  },
+  balanceRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  balanceCell: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: colors.surface,
+  },
+  balanceLabel: {
+    fontSize: 12,
+    color: colors.muted,
+  },
+  balanceValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.ink,
+    marginTop: 2,
+  },
+  balanceSettled: {
+    color: colors.success,
+  },
+  paymentRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.faintLine,
+  },
+  paymentMethod: {
+    fontSize: 14,
+    color: colors.inkSoft,
+  },
+  paymentAmount: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.ink,
+  },
+  methodRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 4,
+  },
+  methodChip: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  methodChipSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryFaint,
+  },
+  methodChipText: {
+    color: colors.ink,
+    fontSize: 13,
+  },
+  methodChipTextSelected: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  paymentInputRow: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+  },
+  paymentInput: {
+    flex: 1,
+  },
+  recordButton: {
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  recordButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "600",
   },
   consumedRow: {
     flexDirection: "row",

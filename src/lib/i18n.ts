@@ -344,6 +344,17 @@ const en = {
   "closures.errorDate": "Enter dates as YYYY-MM-DD.",
   "closures.errorOrder": "End date must be on or after the start date.",
 
+  // Payments (roadmap 4.3b, F5)
+  "payment.title": "Payments",
+  "payment.paid": "Paid",
+  "payment.remaining": "Remaining",
+  "payment.record": "Record",
+  "payment.amountPlaceholder": "Amount",
+  "payment.errorAmount": "Enter an amount greater than zero.",
+  "payment.method.cash": "Cash",
+  "payment.method.transfer": "Transfer",
+  "payment.method.bog_link": "Card / BOG",
+
   // Staff
   "settings.staff": "Staff",
   "staff.add": "+ Add staff member",
@@ -662,6 +673,16 @@ const ka: Record<StringKey, string> = {
   "closures.removeConfirm": "წავშალო ეს დახურვა?",
   "closures.errorDate": "შეიყვანეთ თარიღები ფორმატში YYYY-MM-DD.",
   "closures.errorOrder": "დასრულების თარიღი უნდა იყოს დაწყების ტოლი ან მეტი.",
+
+  "payment.title": "გადახდები",
+  "payment.paid": "გადახდილი",
+  "payment.remaining": "დარჩენილი",
+  "payment.record": "ჩაწერა",
+  "payment.amountPlaceholder": "თანხა",
+  "payment.errorAmount": "შეიყვანეთ ნულზე მეტი თანხა.",
+  "payment.method.cash": "ნაღდი",
+  "payment.method.transfer": "გადარიცხვა",
+  "payment.method.bog_link": "ბარათი / BOG",
 
   "settings.staff": "თანამშრომლები",
   "staff.add": "+ თანამშრომლის დამატება",

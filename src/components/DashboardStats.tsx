@@ -42,25 +42,32 @@ export function DashboardStats() {
     const prevMonthEnd = startOfMonth(now);
     const thisMonthEnd = addMonths(prevMonthEnd, 1);
 
-    const [prevMonthResult, allTimeResult, receivedPoResult] = await Promise.all([
-      supabase
-        .from("jobs")
-        .select("vehicle_id, status, price_total")
-        .eq("business_id", business.id)
-        .gte("scheduled_slot", prevMonthStart.toISOString())
-        .lt("scheduled_slot", prevMonthEnd.toISOString()),
-      supabase.from("jobs").select("status, price_total").eq("business_id", business.id),
-      // Both months in one query (previous month start through now) --
-      // split client-side rather than firing two near-identical queries.
-      supabase
-        .from("purchase_orders")
-        .select("received_at, purchase_order_items(qty, unit_price)")
-        .eq("business_id", business.id)
-        .eq("status", "received")
-        .gte("received_at", prevMonthStart.toISOString()),
-    ]);
+    const [prevMonthResult, allTimeResult, receivedPoResult, paymentsResult] =
+      await Promise.all([
+        supabase
+          .from("jobs")
+          .select("vehicle_id, status, price_total")
+          .eq("business_id", business.id)
+          .gte("scheduled_slot", prevMonthStart.toISOString())
+          .lt("scheduled_slot", prevMonthEnd.toISOString()),
+        supabase.from("jobs").select("id, status, price_total").eq("business_id", business.id),
+        // Both months in one query (previous month start through now) --
+        // split client-side rather than firing two near-identical queries.
+        supabase
+          .from("purchase_orders")
+          .select("received_at, purchase_order_items(qty, unit_price)")
+          .eq("business_id", business.id)
+          .eq("status", "received")
+          .gte("received_at", prevMonthStart.toISOString()),
+        supabase.from("payments").select("job_id, amount").eq("business_id", business.id),
+      ]);
 
-    if (prevMonthResult.error || allTimeResult.error || receivedPoResult.error) {
+    if (
+      prevMonthResult.error ||
+      allTimeResult.error ||
+      receivedPoResult.error ||
+      paymentsResult.error
+    ) {
       setError(true);
       return;
     }
@@ -68,6 +75,14 @@ export function DashboardStats() {
     const prevMonthJobs = prevMonthResult.data ?? [];
     const allJobs = allTimeResult.data ?? [];
     const receivedPos = (receivedPoResult.data as unknown as ReceivedPo[]) ?? [];
+    const paymentRows = (paymentsResult.data ?? []) as { job_id: string; amount: number }[];
+
+    // Sum recorded payments per job so "pending" reflects the true remaining
+    // balance on partially-paid jobs, not the whole price (roadmap 4.3b / F5).
+    const paidByJob = new Map<string, number>();
+    for (const p of paymentRows) {
+      paidByJob.set(p.job_id, (paidByJob.get(p.job_id) ?? 0) + Number(p.amount));
+    }
 
     const finishedPrevMonth = prevMonthJobs.filter(
       (j) => j.status === "complete" || j.status === "paid"
@@ -79,7 +94,10 @@ export function DashboardStats() {
 
     const pendingPayments = allJobs
       .filter((j) => j.status === "complete")
-      .reduce((sum, j) => sum + (j.price_total ?? 0), 0);
+      .reduce((sum, j) => {
+        const remaining = (j.price_total ?? 0) - (paidByJob.get(j.id) ?? 0);
+        return sum + Math.max(0, remaining);
+      }, 0);
     const currentJobs = allJobs.filter((j) => CURRENT_STATUSES.includes(j.status)).length;
 
     const poSpend = (po: ReceivedPo) =>
